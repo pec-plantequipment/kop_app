@@ -50,29 +50,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-   
-  }
-
-  void _startLocationService() async {
-    try {
-      LocationService().initialize();
-      LocationService().getLatetude().then((value) {
-        setState(() {
-          Users.lat = value!;
-        });
-        LocationService().getLongtetude().then((value) {
-          setState(() {
-            Users.long = value!;
-          });
-        });
-      });
-    } catch (e) {}
-  }
-
-  @override
   Widget build(BuildContext context) {
     bool isKeyboardVisible =
         KeyboardVisibilityProvider.isKeyboardVisible(context);
@@ -120,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 customField(
                     'Username or Phone Number', _emailController, false),
                 fieldTitle('Password'),
-                customField('Password', _passwordController, false),
+                customField('Password', _passwordController, true),
                 Container(
                   margin: const EdgeInsets.only(top: 32),
                   child: Padding(
@@ -146,18 +123,35 @@ class _LoginScreenState extends State<LoginScreen> {
                           });
 
                           if (res.statusCode == 200) {
-                            print('wdw');
                             var resBody = jsonDecode(res.body);
-                            print('wdw2');
                             if (resBody['success'] == true) {
                               showSnackBar('Login Suceess');
                               setState(() {
                                 Users.username = resBody['username'];
                                 Users.id = resBody['user_id'];
+                                Users.name_surname_en =
+                                    resBody['name_surname_en'];
+                                Users.name_surname_th =
+                                    resBody['name_surname_th'];
+                                Users.pec_group = resBody['pec_group'];
+                                Users.department = resBody['department'];
+                                Users.position = resBody['position'];
                               });
-                              print('wdw3');
+
                               sharedPreferences =
                                   await SharedPreferences.getInstance();
+                              sharedPreferences.setString('username',
+                                  resBody['username']);
+                              sharedPreferences.setString('name_surname_en',
+                                  resBody['name_surname_en']);
+                              sharedPreferences.setString('name_surname_th',
+                                  resBody['name_surname_th']);
+                              sharedPreferences.setString(
+                                  'pec_group', resBody['pec_group']);
+                              sharedPreferences.setString(
+                                  'department', resBody['department']);
+                              sharedPreferences.setString(
+                                  'position', resBody['position']);
                               sharedPreferences.setString(
                                   'employeeID', resBody['user_id']);
                               sharedPreferences
@@ -222,13 +216,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                 error = 'Error occured';
                               });
                             }
+                            // ignore: use_build_context_synchronously
                             ScaffoldMessenger.of(context)
                                 .showSnackBar(SnackBar(content: Text(error)));
                           }
                         }
                       },
                       child: Container(
-                        padding: EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                             color: primary,
                             borderRadius: BorderRadius.circular(12)),
@@ -275,7 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: screenWidth / 50),
       width: screenWidth,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.all(
             Radius.circular(12),
@@ -286,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ]),
       child: Row(
         children: [
-          Container(
+          SizedBox(
             width: screenWidth / 6,
             child: Icon(
               Icons.person,

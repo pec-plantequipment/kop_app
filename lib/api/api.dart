@@ -1,5 +1,5 @@
 class API {
-  static const hostConnect = 'https://www.project1.ts2337.com/checkin_App/api_sql/';
+  static const hostConnect = 'https://www.project1.ts2337.com/checkin_App/api_sql';
   static const hostConnectUser = '$hostConnect/user';
 
   static const validateEmail = "$hostConnect/user/validate_email.php";

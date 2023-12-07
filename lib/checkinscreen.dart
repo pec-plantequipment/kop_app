@@ -1,45 +1,52 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:kop_checkin/api/api.dart';
-import 'package:kop_checkin/homescreen.dart';
-import 'package:kop_checkin/location10.dart';
-import 'package:kop_checkin/location2.dart';
-import 'package:kop_checkin/location3.dart';
-import 'package:kop_checkin/location4.dart';
-import 'package:kop_checkin/location5.dart';
-import 'package:kop_checkin/location6.dart';
-import 'package:kop_checkin/location7.dart';
-import 'package:kop_checkin/location8.dart';
-import 'package:kop_checkin/location9.dart';
 import 'package:kop_checkin/model/user.dart';
-import 'package:slide_to_act/slide_to_act.dart';
 import 'package:intl/intl.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
+import 'package:flutter_exit_app/flutter_exit_app.dart';
+import 'package:trust_location/trust_location.dart';
 
 class CheckinScreen extends StatefulWidget {
   const CheckinScreen({super.key});
-
   @override
   State<CheckinScreen> createState() => _CheckinScreenState();
 }
 
 class _CheckinScreenState extends State<CheckinScreen> {
+  /* Assuming in an async function */
+
+  bool isMockLocation = false;
+  String? lat;
+  String? long;
+  String office = 'Bangkok';
+
   double screenHeight = 0;
   double screenWidth = 0;
 
   String checkIn2 = '';
-
   String checkIn = '--/--';
   String checkOut = '--/--';
   String locationCheckin = " ";
   String locationCheckout = " ";
+  var location_index = 1;
+  bool _isLoading = false;
+
+  String docdate = DateFormat('dd MMMM yyyy').format(DateTime.now());
+
   Color primary = const Color.fromRGBO(12, 45, 92, 1);
   bool check = false;
   late Position currentLocation;
+
+  final _locationController = TextEditingController();
+  final _customerController = TextEditingController();
 
   final List<Marker> _list = [
     Marker(
@@ -51,26 +58,44 @@ class _CheckinScreenState extends State<CheckinScreen> {
   final Completer<GoogleMapController> _controller = Completer();
   final List<Marker> _maker = [];
 
-  List<String> locationPage = [
-    "location 1",
-    "location 2",
-    "location 3",
-    "location 4",
-    "location 5",
-    "location 6",
-    "location 7",
-    "location 8",
-    "location 9",
-    "location 10",
+  List<String> officeProvince = [
+    "Bangkok",
+    "Rayong",
   ];
+
+
 
   @override
   void initState() {
+
     // TODO: implement initState
     super.initState();
+    
+    // requestLocationPermission();
     _maker.addAll(_list);
     _getRecord();
+    // requestLocationPermission();
   }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
+
+  /// Request location permission at runtime.
+  // void requestLocationPermission() async {
+  //   final permission = await Permission.location.request();
+  //   if (permission == PermissionStatus.granted) {
+  //     TrustLocation.start(0);
+  //     TrustLocation.onChange.listen((values) => setState(() {
+  //           isMockLocation = values.isMockLocation;
+  //         }));
+
+  //   } else if (permission == PermissionStatus.denied) {
+  //     await Permission.location.request();
+  //   }
+  // }
 
   Future<Position> _getCurrentLocation() async {
     bool serviceEnable = await Geolocator.isLocationServiceEnabled();
@@ -90,56 +115,97 @@ class _CheckinScreenState extends State<CheckinScreen> {
     return Geolocator.getCurrentPosition();
   }
 
-  Future addRecordDetails(String locationCheckin) async {
+  Future<void> _showMyDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Alert Mock App'),
+          content: const SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Please turn off the mock app'),
+                // Text('Would you like to approve of this message?'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Ok'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future addRecordDetails(
+      String locationCheckin, location_index, time_in, timestamp_in) async {
     await http.post(Uri.parse(API.addCheckin), body: {
-      'doc_date': DateFormat('dd MMMM yyyy').format(DateTime.now()),
+      'doc_date': docdate,
       'user_code': Users.id,
-      'time': DateFormat('hh:mm a').format(DateTime.now()),
+      'time': time_in,
       'checkin_out': 'IN',
       'location': locationCheckin.toString(),
-      'location_index': '1',
-      'timestamp': DateFormat('yyyy-MM-dd').format(DateTime.now())
+      'location_index': location_index.toString(),
+      'time_in': timestamp_in,
+      'remark': _locationController.text.trim(),
+      'longitude': Users.long.toString(),
+      'latitude': Users.lat.toString(),
+      'office': office,
+      'custoemer': _customerController.text.trim(),
     });
   }
 
-  Future updateRecordDetails(String locationCheckout) async {
+  Future updateRecordDetails(
+      String locationCheckout, location_index, time_out, timestamp_out) async {
     await http.post(Uri.parse(API.updateCheck), body: {
-      'doc_date': DateFormat('dd MMMM yyyy').format(DateTime.now()),
-      'time': DateFormat('hh:mm a').format(DateTime.now()),
+      'doc_date': docdate,
+      'time': time_out,
+      'time_out': timestamp_out,
       'location': locationCheckout.toString(),
-      'location_index': '1',
+      'location_index': location_index.toString(),
+      'longitude': Users.long.toString(),
+      'latitude': Users.lat.toString(),
     });
-    // ignore: use_build_context_synchronously
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const Location2()),
-    );
   }
 
   void _getRecord() async {
     var res = await http.post(Uri.parse(API.getDocCheck), body: {
       'doc_date': DateFormat('dd MMMM yyyy').format(DateTime.now()),
       'user_code': Users.id,
-      'location_index': '1',
     });
-
     if (res.statusCode == 200) {
       try {
         var resBody = jsonDecode(res.body);
         setState(() {
           checkIn = resBody['checkin'];
           checkOut = resBody['checkout'];
+          location_index = int.parse(resBody['location_index']);
+          _isLoading = true;
         });
-     
-      } catch (e) {
-    
-      }
+        if (resBody['checkout'] != '--/--') {
+          setState(() {
+            location_index = int.parse(resBody['location_index']) + 1;
+            checkIn = '--/--';
+            checkOut = '--/--';
+            _isLoading = true;
+          });
+        }
+        // ignore: empty_catches
+      } catch (e) {}
     }
+    setState(() {
+      _isLoading = true;
+    });
   }
 
   Future _goToMe(double lat, double long) async {
     final GoogleMapController controller = await _controller.future;
-
     controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
       target: LatLng(lat, long),
       zoom: 16,
@@ -158,435 +224,417 @@ class _CheckinScreenState extends State<CheckinScreen> {
   Widget build(BuildContext context) {
     screenHeight = MediaQuery.of(context).size.height;
     screenWidth = MediaQuery.of(context).size.width;
-    String dropdownValue = locationPage.first;
-    return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Container(
-              alignment: Alignment.centerLeft,
-              margin: const EdgeInsets.only(top: 32),
-              child: Text(
-                'Location 1',
-                style: TextStyle(
-                    color: Colors.black54,
-                    fontFamily: 'NexaBold',
-                    fontSize: screenWidth / 20),
-              ),
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    alignment: Alignment.center,
-                    child: Text(
-                      Users.username,
-                      style: TextStyle(
-                          color: Colors.black54,
-                          fontFamily: 'NexaBold',
-                          fontSize: screenWidth / 18),
-                    ),
-                  ),
-                ),
-                // Expanded(
-                //   child: Container(
-                //     alignment: Alignment.center,
-                //     child: DropdownMenu<String>(
-                //       label: const Text('Location'),
-                //       textStyle: const TextStyle(
-                //         fontSize: 20,
-                //         color: Colors.black54,
-                //         fontFamily: 'NexaBold',
-                //       ),
-                //       initialSelection: dropdownValue,
-                //       dropdownMenuEntries: locationPage
-                //           .map<DropdownMenuEntry<String>>((String value) {
-                //         return DropdownMenuEntry<String>(
-                //             value: value, label: value);
-                //       }).toList(),
-                //       onSelected: (String? value) {
-                //         setState(() {
-                //           dropdownValue = value!;
-                //         });
-                //         // This is called when the user selects an item.
-                //         if (dropdownValue == 'location 1') {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(
-                //                 builder: (context) => const HomeScreeen()),
-                //           );
-                //         } else if (dropdownValue == 'location 2') {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(
-                //                 builder: (context) => const Location2()),
-                //           );
-                //         } else if (dropdownValue == 'location 3') {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(
-                //                 builder: (context) => const Location3()),
-                //           );
-                //         } else if (dropdownValue == 'location 4') {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(
-                //                 builder: (context) => const Location4()),
-                //           );
-                //         } else if (dropdownValue == 'location 5') {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(
-                //                 builder: (context) => const Location5()),
-                //           );
-                //         } else if (dropdownValue == 'location 6') {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(
-                //                 builder: (context) => const Location6()),
-                //           );
-                //         } else if (dropdownValue == 'location 7') {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(
-                //                 builder: (context) => const Location7()),
-                //           );
-                //         } else if (dropdownValue == 'location 8') {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(
-                //                 builder: (context) => const Location8()),
-                //           );
-                //         } else if (dropdownValue == 'location 9') {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(
-                //                 builder: (context) => const Location9()),
-                //           );
-                //         } else if (dropdownValue == 'location 10') {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(
-                //                 builder: (context) => const Location10()),
-                //           );
-                //         }
-                //       },
-                //     ),
-                //   ),
-                // ),
-              ],
-            ),
-            Container(
-              alignment: Alignment.centerLeft,
-              margin: const EdgeInsets.only(top: 32),
-              child: Text(
-                "Today's Status",
-                style: TextStyle(
-                    color: Colors.black54,
-                    fontFamily: 'NexaBold',
-                    fontSize: screenWidth / 20),
-              ),
-            ),
-            Container(
-              width: 400,
-              height: 200,
-              child: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: LatLng(Users.lat, Users.long),
-                  zoom: 17,
-                ),
-                markers: Set<Marker>.of(_maker),
-                myLocationButtonEnabled: true,
-                myLocationEnabled: true,
-                onMapCreated: (GoogleMapController controller) {
-                  _controller.complete(controller);
-                },
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 30),
-              height: 150,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 10,
-                      offset: Offset(2, 2))
-                ],
-                borderRadius: BorderRadius.all(Radius.circular(28)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
+    String dropdownValue = officeProvince.first;
+    return _isLoading
+        ? Scaffold(
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: Container(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Check In",
-                            style: TextStyle(
-                                fontFamily: 'NexaRegular',
-                                fontSize: screenWidth / 20,
-                                color: Colors.black54),
-                          ),
-                          Text(checkIn,
-                              style: TextStyle(
-                                  fontFamily: 'NexaBold',
-                                  fontSize: screenWidth / 18,
-                                  color: Colors.black54)),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Check Out",
-                            style: TextStyle(
-                                fontFamily: 'NexaRegular',
-                                fontSize: screenWidth / 20,
-                                color: Colors.black54),
-                          ),
-                          Text(checkOut,
-                              style: TextStyle(
-                                  fontFamily: 'NexaBold',
-                                  fontSize: screenWidth / 18,
-                                  color: Colors.black54)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-                alignment: Alignment.centerLeft,
-                child: RichText(
-                  text: TextSpan(
-                      text: DateTime.now().day.toString(),
-                      style: TextStyle(
-                        color: primary,
-                        fontSize: screenWidth / 18,
-                        fontFamily: 'NexaBold',
-                      ),
-                      children: [
-                        TextSpan(
-                          text: DateFormat(' MMMM yyyy').format(DateTime.now()),
-                          style: TextStyle(
-                              fontFamily: 'NexaBold',
-                              fontSize: screenWidth / 20,
-                              color: Colors.black54),
-                        )
-                      ]),
-                )),
-            StreamBuilder(
-                stream: Stream.periodic(const Duration(seconds: 1)),
-                builder: (context, snapshot) {
-                  return Container(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      DateFormat('hh:mm:ss a').format(DateTime.now()),
-                      style: TextStyle(
-                          fontFamily: 'NexaBold',
-                          fontSize: screenWidth / 18,
-                          color: Colors.black54),
-                    ),
-                  );
-                }),
-            checkOut == '--/--'
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Row(
                     children: [
                       Expanded(
                         child: Container(
-                          margin: const EdgeInsets.only(top: 24),
-                          child: MaterialButton(
-                            onPressed: () {
-                              _getCurrentLocation().then((value) {
-                                setState(() {
-                                  Users.lat = value.latitude;
-                                  Users.long = value.longitude;
-                                });
-                              });
-                              _goToMe(Users.lat, Users.long);
-                            },
-                            color: Colors.blue,
-                            textColor: Colors.white,
-                            padding: const EdgeInsets.all(16),
-                            shape: const CircleBorder(),
-                            child: const Icon(
-                              Icons.location_on_outlined,
-                              size: 40,
+                          alignment: Alignment.centerLeft,
+                          margin: const EdgeInsets.only(top: 30),
+                          child: Text(
+                            'Location $location_index',
+                            style: TextStyle(
+                                color: Colors.black54,
+                                fontFamily: 'NexaBold',
+                                fontSize: screenWidth / 20),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 30),
+                          child: RichText(
+                            text: TextSpan(
+                              text: DateTime.now().day.toString(),
+                              style: TextStyle(
+                                color: primary,
+                                fontSize: screenWidth / 20,
+                                fontFamily: 'NexaBold',
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: DateFormat(' MMMM yyyy')
+                                      .format(DateTime.now()),
+                                  style: TextStyle(
+                                      fontFamily: 'NexaBold',
+                                      fontSize: screenWidth / 22,
+                                      color: Colors.black54),
+                                )
+                              ],
                             ),
                           ),
                         ),
                       ),
-                      checkIn == '--/--'
-                          ? Expanded(
-                              child: Container(
-                                margin: const EdgeInsets.only(top: 24),
-                                child: MaterialButton(
-                                  onPressed: () async {
-                                    _getCurrentLocation().then((value) {
-                                      setState(() {
-                                        Users.lat = value.latitude;
-                                        Users.long = value.longitude;
-                                      });
-                                    });
-                                    _goToMe(Users.lat, Users.long);
-                                    List<Placemark> placemark =
-                                        await placemarkFromCoordinates(
-                                            Users.lat, Users.long);
-                                    setState(() {
-                                      locationCheckin =
-                                          "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
-                                    });
-                                    setState(() {
-                                      checkIn = DateFormat('hh:mm')
-                                          .format(DateTime.now());
-                                    });
-
-                                    addRecordDetails(locationCheckin);
-                                  },
-                                  color: Colors.green,
-                                  textColor: Colors.white,
-                                  padding: const EdgeInsets.all(16),
-                                  shape: const CircleBorder(),
-                                  child: const Icon(
-                                    Icons.check_circle_outlined,
-                                    size: 40,
-                                  ),
-                                ),
-                              ),
-                            )
-                          : Expanded(
-                              child: Container(
-                                margin: const EdgeInsets.only(top: 24),
-                                child: MaterialButton(
-                                  onPressed: () async {
-                                    _getCurrentLocation().then((value) {
-                                      setState(() {
-                                        Users.lat = value.latitude;
-                                        Users.long = value.longitude;
-                                      });
-                                    });
-                                    _goToMe(Users.lat, Users.long);
-                                    List<Placemark> placemark =
-                                        await placemarkFromCoordinates(
-                                            Users.lat, Users.long);
-                                    setState(() {
-                                      locationCheckout =
-                                          "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
-                                    });
-
-                                    setState(() {
-                                      checkOut = DateFormat('hh:mm')
-                                          .format(DateTime.now());
-                                    });
-                                    setState(() {
-                                      Users.checkout1 = true;
-                                    });
-                                    updateRecordDetails(locationCheckout);
-                                  },
-                                  color: Colors.red,
-                                  textColor: Colors.white,
-                                  padding: const EdgeInsets.all(16),
-                                  shape: const CircleBorder(),
-                                  child: const Icon(
-                                    Icons.cancel,
-                                    size: 40,
-                                  ),
-                                ),
-                              ),
-                            )
                     ],
-                  )
-                // child: Builder(builder: (context) {
-                //   final GlobalKey<SlideActionState> key = GlobalKey();
-                // return SlideAction(
-                //   text: checkIn == "--/--"
-                //       ? "Slide to Check In"
-                //       : "Slide to Check Out",
-                //   textStyle: TextStyle(
-                //     color: Colors.black54,
-                //     fontFamily: "NexaRegular",
-                //     fontSize: screenWidth / 18,
-                //   ),
-                //   outerColor: Colors.white,
-                //   innerColor: primary,
-                //   key: key,
-                //   onSubmit: () async {
-                //     if (checkIn == '--/--') {
-                //       _getCurrentLocation().then((value) {
-                //         setState(() {
-                //           Users.lat = value.latitude;
-                //           Users.long = value.longitude;
-                //         });
-                //       });
-                //       _goToMe(Users.lat, Users.long);
-                //       List<Placemark> placemark =
-                //           await placemarkFromCoordinates(
-                //               Users.lat, Users.long);
-                //       setState(() {
-                //         locationCheckin =
-                //             "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
-                //       });
-
-                //       setState(() {
-                //         checkIn = DateFormat('hh:mm').format(DateTime.now());
-                //       });
-
-                //       addRecordDetails(locationCheckin);
-                //     } else {
-                //       _getCurrentLocation().then((value) {
-                //         setState(() {
-                //           Users.lat = value.latitude;
-                //           Users.long = value.longitude;
-                //         });
-                //       });
-                //       _goToMe(Users.lat, Users.long);
-                //       List<Placemark> placemark =
-                //           await placemarkFromCoordinates(
-                //               Users.lat, Users.long);
-                //       setState(() {
-                //         locationCheckout =
-                //             "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
-                //       });
-                //
-                //       setState(() {
-                //         checkOut = DateFormat('hh:mm').format(DateTime.now());
-                //       });
-                //      updateRecordDetails(locationCheckout);
-                //     }
-                //     key.currentState?.reset();
-                //   },
-                // );
-                // }
-
-                : Container(
-                    margin: const EdgeInsets.only(top: 24),
-                    child: Text(
-                      'Today You have Check In',
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontFamily: "NexaBold",
-                        fontSize: screenWidth / 18,
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          alignment: Alignment.centerLeft,
+                          margin: const EdgeInsets.only(top: 10),
+                          child: Text(
+                            "Today's Status",
+                            style: TextStyle(
+                                color: Colors.black54,
+                                fontFamily: 'NexaBold',
+                                fontSize: screenWidth / 20),
+                          ),
+                        ),
                       ),
+                      Expanded(
+                          child: StreamBuilder(
+                              stream:
+                                  Stream.periodic(const Duration(seconds: 1)),
+                              builder: (context, snapshot) {
+                                return Container(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    DateFormat('hh:mm:ss a')
+                                        .format(DateTime.now()),
+                                    style: TextStyle(
+                                        fontFamily: 'NexaBold',
+                                        fontSize: screenWidth / 18,
+                                        color: Colors.black54),
+                                  ),
+                                );
+                              }))
+                    ],
+                  ),
+                  SizedBox(
+                    width: 400,
+                    height: 150,
+                    child: GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: LatLng(Users.lat, Users.long),
+                        zoom: 17,
+                      ),
+                      markers: Set<Marker>.of(_maker),
+                      myLocationButtonEnabled: true,
+                      myLocationEnabled: true,
+                      onMapCreated: (GoogleMapController controller) {
+                        _controller.complete(controller);
+                      },
                     ),
                   ),
-          ],
+                  Container(
+                    margin: const EdgeInsets.only(top: 30, bottom: 30),
+                    height: 75,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 10,
+                            offset: Offset(2, 2))
+                      ],
+                      borderRadius: BorderRadius.all(Radius.circular(28)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Check In",
+                                style: TextStyle(
+                                    fontFamily: 'NexaRegular',
+                                    fontSize: screenWidth / 20,
+                                    color: Colors.black54),
+                              ),
+                              Text(checkIn,
+                                  style: TextStyle(
+                                      fontFamily: 'NexaBold',
+                                      fontSize: screenWidth / 18,
+                                      color: Colors.black54)),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Check Out",
+                                style: TextStyle(
+                                    fontFamily: 'NexaRegular',
+                                    fontSize: screenWidth / 20,
+                                    color: Colors.black54),
+                              ),
+                              Text(checkOut,
+                                  style: TextStyle(
+                                      fontFamily: 'NexaBold',
+                                      fontSize: screenWidth / 18,
+                                      color: Colors.black54)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                            alignment: Alignment.center,
+                            child: textField(
+                                'Customer', 'Customer', _customerController)),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(top: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        alignment: Alignment.centerLeft,
+                        child: DropdownMenu<String>(
+                          label: const Text('Office'),
+                          textStyle: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.black54,
+                            fontFamily: 'NexaBold',
+                          ),
+                          initialSelection: dropdownValue,
+                          dropdownMenuEntries: officeProvince
+                              .map<DropdownMenuEntry<String>>((String value) {
+                            return DropdownMenuEntry<String>(
+                                value: value, label: value);
+                          }).toList(),
+                          onSelected: (String? value) {
+                            setState(() {
+                              dropdownValue = value!;
+                              office = value!;
+                            });
+                            // This is called when the user selects an item.
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  checkOut == '--/--'
+                      ? Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Container(
+                                margin: const EdgeInsets.only(top: 40),
+                                child: MaterialButton(
+                                  onPressed: () async {
+                                    _getCurrentLocation().then((value) {
+                                      setState(() {
+                                        Users.lat = value.latitude;
+                                        Users.long = value.longitude;
+                                      });
+                                    });
+                                    _goToMe(Users.lat, Users.long);
+                                    isMockLocation = await TrustLocation.isMockLocation;
+                                  },
+                                  color: Colors.blue,
+                                  textColor: Colors.white,
+                                  padding: const EdgeInsets.all(16),
+                                  shape: const CircleBorder(),
+                                  child: const Icon(
+                                    Icons.location_on_outlined,
+                                    size: 40,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            checkIn == '--/--'
+                                ? Expanded(
+                                    child: Container(
+                                      margin: const EdgeInsets.only(top: 24),
+                                      child: MaterialButton(
+                                        onPressed: () async {
+                                          if (isMockLocation == true) {
+                                            
+                                            SystemNavigator.pop();
+                                            FlutterExitApp.exitApp(
+                                                iosForceExit: true);
+                                            FlutterExitApp.exitApp();
+                                          } else {
+                                            _goToMe(Users.lat, Users.long);
+                                            List<Placemark> placemark =
+                                                await placemarkFromCoordinates(
+                                                    Users.lat, Users.long);
+                                            setState(() {
+                                              locationCheckin =
+                                                  "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
+                                              docdate =
+                                                  DateFormat('dd MMMM yyyy')
+                                                      .format(DateTime.now());
+                                            });
+                                            setState(() {
+                                              checkIn = DateFormat('hh:mm')
+                                                  .format(DateTime.now());
+                                              addRecordDetails(
+                                                  "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
+                                                  location_index,
+                                                  DateFormat('hh:mm a')
+                                                      .format(DateTime.now()),
+                                                  DateFormat('yyyy-MM-dd H:m:s')
+                                                      .format(DateTime.now()));
+                                            });
+                                          }
+                                        },
+                                        color: Colors.green,
+                                        textColor: Colors.white,
+                                        padding: const EdgeInsets.all(16),
+                                        shape: const CircleBorder(),
+                                        child: const Icon(
+                                          Icons.check_circle_outlined,
+                                          size: 40,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Expanded(
+                                    child: Container(
+                                      margin: const EdgeInsets.only(top: 24),
+                                      child: MaterialButton(
+                                        onPressed: () async {
+                                          if (isMockLocation == true) {
+                                            
+                                            SystemNavigator.pop();
+                                            FlutterExitApp.exitApp(
+                                                iosForceExit: true);
+                                            FlutterExitApp.exitApp();
+                                          } else {
+                                            _goToMe(Users.lat, Users.long);
+                                            List<Placemark> placemark =
+                                                await placemarkFromCoordinates(
+                                                    Users.lat, Users.long);
+                                            setState(() {
+                                              locationCheckout =
+                                                  "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
+                                              docdate =
+                                                  DateFormat('dd MMMM yyyy')
+                                                      .format(DateTime.now());
+                                            });
+                                            updateRecordDetails(
+                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
+                                                location_index,
+                                                DateFormat('hh:mm a')
+                                                    .format(DateTime.now()),
+                                                DateFormat('yyyy-MM-dd H:m:s')
+                                                    .format(DateTime.now()));
+                                            setState(() {
+                                              checkOut = DateFormat('hh:mm')
+                                                  .format(DateTime.now());
+                                            });
+                                            Timer(
+                                                const Duration(
+                                                    milliseconds: 5000), () {
+                                              setState(() {
+                                                location_index++;
+                                                checkOut = '--/--';
+                                                checkIn = '--/--';
+                                                _customerController.clear();
+                                                _locationController.clear();
+                                              });
+                                            });
+                                          }
+                                        },
+                                        color: Colors.red,
+                                        textColor: Colors.white,
+                                        padding: const EdgeInsets.all(16),
+                                        shape: const CircleBorder(),
+                                        child: const Icon(
+                                          Icons.cancel,
+                                          size: 40,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                          ],
+                        )
+                      : Container(
+                          margin: const EdgeInsets.only(top: 24),
+                          child: Text(
+                            'Today You have Check In',
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontFamily: "NexaBold",
+                              fontSize: screenWidth / 18,
+                            ),
+                          ),
+                        ),
+                        // Container(
+                        //   margin: const EdgeInsets.only(top: 24),
+                        //   child: Text(
+                        //     'Mock $isMockLocation',
+                        //     style: TextStyle(
+                        //       color: Colors.black54,
+                        //       fontFamily: "NexaBold",
+                        //       fontSize: screenWidth / 18,
+                        //     ),
+                        //   ),
+                        // ),
+                ],
+              ),
+            ),
+          )
+        : const Center(
+            child: CircularProgressIndicator(),
+          );
+  }
+
+  Widget textField(
+      String hint, String title, TextEditingController controller) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          alignment: Alignment.centerLeft,
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.black54,
+              fontFamily: "NexaBold",
+            ),
+          ),
         ),
-      ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          margin: const EdgeInsets.only(bottom: 12),
+          child: TextFormField(
+            controller: controller,
+            cursorColor: Colors.black54,
+            maxLines: 1,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: const TextStyle(
+                color: Colors.black54,
+                fontFamily: "NexaBold",
+                fontSize: 14,
+              ),
+              enabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: Colors.black54,
+                ),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: Colors.black54,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

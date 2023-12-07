@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kop_checkin/api/api.dart';
 import 'package:kop_checkin/model/user.dart';
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
+// ignore: unused_import
 import 'package:month_year_picker/month_year_picker.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -18,43 +20,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
   double screenHeight = 0;
   double screenWidth = 0;
   Color primary = const Color.fromRGBO(12, 45, 92, 1);
-
-  String _month = DateFormat('MMMM').format(DateTime.now());
   String _day = DateFormat('dd MMMM yyyy').format(DateTime.now());
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-  }
-
   Future getRowCheckin() async {
     var res = await http.post(Uri.parse(API.getRowCheck), body: {
       'user_code': Users.id,
     });
     try {
       return jsonDecode(res.body);
+      // ignore: empty_catches
     } catch (e) {}
   }
-
-  List<String> locationPage = [
-    "location 1",
-    "location 2",
-    "location 3",
-    "location 4",
-    "location 5",
-    "location 6",
-    "location 7",
-    "location 8",
-    "location 9",
-    "location 10",
-  ];
 
   @override
   Widget build(BuildContext context) {
     screenHeight = MediaQuery.of(context).size.height;
     screenWidth = MediaQuery.of(context).size.width;
-    String dropdownValue = locationPage.first;
     return Users.id != ""
         ? Scaffold(
             body: SingleChildScrollView(
@@ -113,14 +93,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                             onSecondary: Colors.white),
                                         textButtonTheme: TextButtonThemeData(
                                           style: TextButton.styleFrom(
-                                              primary: primary),
+                                              foregroundColor: primary),
                                         ),
                                         textTheme: const TextTheme(
-                                          headline4:
+                                          headlineMedium:
                                               TextStyle(fontFamily: 'NexaBold'),
-                                          overline:
+                                          labelSmall:
                                               TextStyle(fontFamily: 'NexaBold'),
-                                          button:
+                                          labelLarge:
                                               TextStyle(fontFamily: 'NexaBold'),
                                         )),
                                     child: child!);
@@ -128,9 +108,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             );
 
                             if (month != null) {
-                              setState(() {
-                                _month = DateFormat('MMMM').format(month);
-                              });
+                              setState(() {});
                             }
                             if (month != null) {
                               setState(() {
@@ -185,7 +163,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                   color: primary,
                                                   borderRadius:
                                                       const BorderRadius.only(
-                                                        topLeft: Radius.circular(20),topRight: Radius.circular(20)),
+                                                          topLeft:
+                                                              Radius.circular(
+                                                                  20),
+                                                          topRight:
+                                                              Radius.circular(
+                                                                  20)),
                                                 ),
                                                 child: Row(
                                                   mainAxisAlignment:
@@ -218,89 +201,95 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                       ),
                                                     )),
                                                     Expanded(
-                                                      child: Container(
-                                                        child: Column(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Text(
-                                                              "Check In",
+                                                      child: Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Text(
+                                                            "Check In",
+                                                            style: TextStyle(
+                                                                fontFamily:
+                                                                    'NexaBold',
+                                                                fontSize:
+                                                                    screenWidth /
+                                                                        20,
+                                                                color: Colors
+                                                                    .white),
+                                                          ),
+                                                          Text(
+                                                              list[index]
+                                                                  ['checkin'],
                                                               style: TextStyle(
                                                                   fontFamily:
                                                                       'NexaBold',
                                                                   fontSize:
                                                                       screenWidth /
-                                                                          20,
+                                                                          24,
                                                                   color: Colors
-                                                                      .white),
-                                                            ),
-                                                            Text(
-                                                                list[index]
-                                                                    ['checkin'],
-                                                                style: TextStyle(
-                                                                    fontFamily:
-                                                                        'NexaBold',
-                                                                    fontSize:
-                                                                        screenWidth /
-                                                                            20,
-                                                                    color: Colors
-                                                                        .white)),
-                                                          ],
-                                                        ),
+                                                                      .white)),
+                                                        ],
                                                       ),
                                                     ),
                                                     Expanded(
-                                                      child: Container(
-                                                        child: Column(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Text(
-                                                              "Check Out",
+                                                      child: Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Text(
+                                                            "Check Out",
+                                                            style: TextStyle(
+                                                                fontFamily:
+                                                                    'NexaBold',
+                                                                fontSize:
+                                                                    screenWidth /
+                                                                        20,
+                                                                color: Colors
+                                                                    .white),
+                                                          ),
+                                                          Text(
+                                                              list[index][
+                                                                  'checkout'],
                                                               style: TextStyle(
                                                                   fontFamily:
                                                                       'NexaBold',
                                                                   fontSize:
                                                                       screenWidth /
-                                                                          20,
+                                                                          24,
                                                                   color: Colors
-                                                                      .white),
-                                                            ),
-                                                            Text(
-                                                                list[index][
-                                                                    'checkout'],
-                                                                style: TextStyle(
-                                                                    fontFamily:
-                                                                        'NexaBold',
-                                                                    fontSize:
-                                                                        screenWidth /
-                                                                            20,
-                                                                    color: Colors
-                                                                        .white)),
-                                                          ],
-                                                        ),
+                                                                      .white)),
+                                                        ],
                                                       ),
                                                     ),
-                                                    SizedBox(
+                                                    const SizedBox(
                                                       height: 100,
                                                     )
                                                   ],
                                                 ),
+                                              ),
+                                               Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                    "Customer : ${list[index]['customer']}",
+                                                    style: TextStyle(
+                                                        fontFamily: 'NexaBold',
+                                                        fontSize:
+                                                            screenWidth / 24,
+                                                        color: Colors.black54)),
                                               ),
                                               Text(
                                                   "Location :${list[index]['location']}",
                                                   style: TextStyle(
                                                       fontFamily: 'NexaBold',
                                                       fontSize:
-                                                          screenWidth / 20,
+                                                          screenWidth / 24,
                                                       color: Colors.black54)),
                                             ],
                                           ))
@@ -316,6 +305,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ),
           )
-        : SizedBox();
+        : const SizedBox();
   }
 }
