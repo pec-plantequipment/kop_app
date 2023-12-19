@@ -167,42 +167,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               showSnackBar('User or Password is Incorrect');
                             }
                           }
-                          // QuerySnapshot sanp = await FirebaseFirestore.instance
-                          //     .collection("Employee")
-                          //     .where('username', isEqualTo: email)
-                          //     .get();
+            
 
                           try {
-                            // if (password == sanp.docs[0]['password']) {
-                            //   QuerySnapshot snap2 = await FirebaseFirestore
-                            //       .instance
-                            //       .collection("Employee")
-                            //       .where('username', isEqualTo: email)
-                            //       .get();
-                            //     setState(() {
-                            //       Users.username = snap2.docs[0]['username'];
-                            //       Users.id = snap2.docs[0].id;
-                            //     });
-
-                            //   sharedPreferences =
-                            //       await SharedPreferences.getInstance();
-                            //   sharedPreferences.setString(
-                            //       'employeeID', snap2.docs[0].id);
-                            //   sharedPreferences
-                            //       .setString('employeeUser', email)
-                            //       .then((_) {
-                            //     Navigator.pushReplacement(
-                            //         context,
-                            //         MaterialPageRoute(
-                            //             builder: (context) =>
-                            //                 const HomeScreeen()));
-                            //   });
-                            // } else {
-                            //   // ignore: use_build_context_synchronously
-                            //   ScaffoldMessenger.of(context).showSnackBar(
-                            //       const SnackBar(
-                            //           content: Text("Paswword in wrong !")));
-                            // }
+                          
                           } catch (e) {
                             String error = '';
 

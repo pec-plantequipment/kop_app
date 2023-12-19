@@ -24,6 +24,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Future getRowCheckin() async {
     var res = await http.post(Uri.parse(API.getRowCheck), body: {
       'user_code': Users.id,
+      'doc_date': _day
     });
     try {
       return jsonDecode(res.body);
@@ -255,8 +256,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                                     .white),
                                                           ),
                                                           Text(
-                                                              list[index][
-                                                                  'checkout'],
+                                                              list[index]
+                                                                  ['checkout'],
                                                               style: TextStyle(
                                                                   fontFamily:
                                                                       'NexaBold',
@@ -274,7 +275,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                   ],
                                                 ),
                                               ),
-                                               Align(
+                                              Align(
                                                 alignment: Alignment.centerLeft,
                                                 child: Text(
                                                     "Customer : ${list[index]['customer']}",
@@ -285,7 +286,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                         color: Colors.black54)),
                                               ),
                                               Text(
-                                                  "Location :${list[index]['location']}",
+                                                  "Location : ${list[index]['location']}",
                                                   style: TextStyle(
                                                       fontFamily: 'NexaBold',
                                                       fontSize:

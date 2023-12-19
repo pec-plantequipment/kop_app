@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:trust_location/trust_location.dart';
+import 'package:kop_checkin/services/location_service.dart';
 
 class CheckinScreen extends StatefulWidget {
   const CheckinScreen({super.key});
@@ -63,16 +64,14 @@ class _CheckinScreenState extends State<CheckinScreen> {
     "Rayong",
   ];
 
-
-
   @override
   void initState() {
-
     // TODO: implement initState
     super.initState();
-    
+
     // requestLocationPermission();
     _maker.addAll(_list);
+    _getOffice();
     _getRecord();
     // requestLocationPermission();
   }
@@ -157,7 +156,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
       'longitude': Users.long.toString(),
       'latitude': Users.lat.toString(),
       'office': office,
-      'custoemer': _customerController.text.trim(),
+      'customer': _customerController.text.trim()
     });
   }
 
@@ -204,6 +203,24 @@ class _CheckinScreenState extends State<CheckinScreen> {
     });
   }
 
+  void _getOffice() async {
+    var res = await http.post(Uri.parse(API.getDocCheck), body: {
+      'doc_date': DateFormat('dd MMMM yyyy').format(DateTime.now()),
+      'user_code': Users.id,
+    });
+    if (res.statusCode == 200) {
+      
+      try {
+        var resBody = jsonDecode(res.body);
+        setState(() {
+          office = resBody['office_province'];
+        });
+        // ignore: empty_catches
+      } catch (e) {}
+    }
+   
+  }
+
   Future _goToMe(double lat, double long) async {
     final GoogleMapController controller = await _controller.future;
     controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
@@ -225,7 +242,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
     screenHeight = MediaQuery.of(context).size.height;
     screenWidth = MediaQuery.of(context).size.width;
     String dropdownValue = officeProvince.first;
-    return _isLoading
+        return _isLoading
         ? Scaffold(
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -440,7 +457,11 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                       });
                                     });
                                     _goToMe(Users.lat, Users.long);
-                                    isMockLocation = await TrustLocation.isMockLocation;
+                                    isMockLocation =
+                                        await TrustLocation.isMockLocation;
+                                    print(DateFormat('dd MMMM yyyy').format(
+                                        DateTime.now().subtract(
+                                            const Duration(days: 1))));
                                   },
                                   color: Colors.blue,
                                   textColor: Colors.white,
@@ -460,7 +481,6 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                       child: MaterialButton(
                                         onPressed: () async {
                                           if (isMockLocation == true) {
-                                            
                                             SystemNavigator.pop();
                                             FlutterExitApp.exitApp(
                                                 iosForceExit: true);
@@ -477,16 +497,18 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                                   DateFormat('dd MMMM yyyy')
                                                       .format(DateTime.now());
                                             });
+
                                             setState(() {
                                               checkIn = DateFormat('hh:mm')
                                                   .format(DateTime.now());
                                               addRecordDetails(
-                                                  "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
-                                                  location_index,
-                                                  DateFormat('hh:mm a')
-                                                      .format(DateTime.now()),
-                                                  DateFormat('yyyy-MM-dd H:m:s')
-                                                      .format(DateTime.now()));
+                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
+                                                location_index,
+                                                DateFormat('hh:mm a')
+                                                    .format(DateTime.now()),
+                                                DateFormat('yyyy-MM-dd H:m:s')
+                                                    .format(DateTime.now()),
+                                              );
                                             });
                                           }
                                         },
@@ -507,7 +529,6 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                       child: MaterialButton(
                                         onPressed: () async {
                                           if (isMockLocation == true) {
-                                            
                                             SystemNavigator.pop();
                                             FlutterExitApp.exitApp(
                                                 iosForceExit: true);
@@ -572,17 +593,17 @@ class _CheckinScreenState extends State<CheckinScreen> {
                             ),
                           ),
                         ),
-                        // Container(
-                        //   margin: const EdgeInsets.only(top: 24),
-                        //   child: Text(
-                        //     'Mock $isMockLocation',
-                        //     style: TextStyle(
-                        //       color: Colors.black54,
-                        //       fontFamily: "NexaBold",
-                        //       fontSize: screenWidth / 18,
-                        //     ),
-                        //   ),
-                        // ),
+                  // Container(
+                  //   margin: const EdgeInsets.only(top: 24),
+                  //   child: Text(
+                  //     'Mock $isMockLocation',
+                  //     style: TextStyle(
+                  //       color: Colors.black54,
+                  //       fontFamily: "NexaBold",
+                  //       fontSize: screenWidth / 18,
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),

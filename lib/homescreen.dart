@@ -7,7 +7,6 @@ import 'package:kop_checkin/calendar.dart';
 import 'package:kop_checkin/checkinscreen.dart';
 import 'package:kop_checkin/model/user.dart';
 import 'package:kop_checkin/profile.dart';
-import 'package:kop_checkin/services/location_service.dart';
 import 'package:http/http.dart' as http;
 
 
@@ -22,8 +21,8 @@ class _HomeScreeenState extends State<HomeScreeen> {
   @override
   void initState() {
     // TODO: implement initState
-    // _startLocationService();
     super.initState();
+    
   }
 
   double screenHeight = 0;
@@ -36,7 +35,6 @@ class _HomeScreeenState extends State<HomeScreeen> {
     FontAwesomeIcons.check,
     FontAwesomeIcons.user,
   ];
-
 
   void changePage(int newIndex) {
     setState(() {
