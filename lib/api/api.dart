@@ -9,4 +9,5 @@ class API {
   static const getDocCheck = "$hostConnect/user/getDocCheck.php";
   static const updateCheck = "$hostConnect/user/updateCheck.php";
   static const getRowCheck = "$hostConnect/user/getRowDate.php";
+    static const getAgenda = "$hostConnect/user/getAgenda.php";
 }

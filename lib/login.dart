@@ -4,10 +4,9 @@ import 'package:kop_checkin/homescreen.dart';
 import 'package:kop_checkin/model/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'api/api.dart';
-import 'services/location_service.dart';
+// import 'services/location_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -41,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (res.statusCode == 200) {
         var resBody = jsonDecode(res.body);
         if (resBody['emailFound'] == true) {
-          showSnackBar('Please enter your birthdate');
+          showSnackBar('Please enter your Password in PEC');
         }
       }
     } catch (e) {
@@ -129,29 +128,29 @@ class _LoginScreenState extends State<LoginScreen> {
                               setState(() {
                                 Users.username = resBody['username'];
                                 Users.id = resBody['user_id'];
-                                Users.name_surname_en =
-                                    resBody['name_surname_en'];
-                                Users.name_surname_th =
-                                    resBody['name_surname_th'];
-                                Users.pec_group = resBody['pec_group'];
-                                Users.department = resBody['department'];
-                                Users.position = resBody['position'];
+                                // Users.name_surname_en =
+                                //     resBody['name_surname_en'];
+                                // Users.name_surname_th =
+                                //     resBody['name_surname_th'];
+                                // Users.pec_group = resBody['pec_group'];
+                                // Users.department = resBody['department'];
+                                // Users.position = resBody['position'];
                               });
 
                               sharedPreferences =
                                   await SharedPreferences.getInstance();
                               sharedPreferences.setString('username',
                                   resBody['username']);
-                              sharedPreferences.setString('name_surname_en',
-                                  resBody['name_surname_en']);
-                              sharedPreferences.setString('name_surname_th',
-                                  resBody['name_surname_th']);
-                              sharedPreferences.setString(
-                                  'pec_group', resBody['pec_group']);
-                              sharedPreferences.setString(
-                                  'department', resBody['department']);
-                              sharedPreferences.setString(
-                                  'position', resBody['position']);
+                              // sharedPreferences.setString('name_surname_en',
+                              //     resBody['name_surname_en']);
+                              // sharedPreferences.setString('name_surname_th',
+                              //     resBody['name_surname_th']);
+                              // sharedPreferences.setString(
+                              //     'pec_group', resBody['pec_group']);
+                              // sharedPreferences.setString(
+                              //     'department', resBody['department']);
+                              // sharedPreferences.setString(
+                              //     'position', resBody['position']);
                               sharedPreferences.setString(
                                   'employeeID', resBody['user_id']);
                               sharedPreferences
@@ -216,12 +215,12 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void newMethod(Position value) {
-    return setState(() {
-      Users.lat = value.latitude;
-      Users.long = value.longitude;
-    });
-  }
+  // void newMethod(Position value) {
+  //   return setState(() {
+  //     Users.lat = value.latitude;
+  //     Users.long = value.longitude;
+  //   });
+  // }
 
   Widget fieldTitle(String title) {
     return Container(

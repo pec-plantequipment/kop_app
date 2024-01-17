@@ -1,7 +1,9 @@
 // ignore_for_file: non_constant_identifier_names
-
-import 'dart:async';
+import 'package:dio/dio.dart';
 import 'dart:convert';
+import 'package:dropdown_search/dropdown_search.dart';
+import 'dart:async';
+// import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:kop_checkin/api/api.dart';
@@ -11,8 +13,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
-import 'package:flutter_exit_app/flutter_exit_app.dart';
-import 'package:trust_location/trust_location.dart';
+import 'package:kop_checkin/model/user_model.dart';
 import 'package:kop_checkin/services/location_service.dart';
 
 class CheckinScreen extends StatefulWidget {
@@ -48,6 +49,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
 
   final _locationController = TextEditingController();
   final _customerController = TextEditingController();
+  String customer = '';
 
   final List<Marker> _list = [
     Marker(
@@ -68,19 +70,20 @@ class _CheckinScreenState extends State<CheckinScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
-
-    // requestLocationPermission();
     _maker.addAll(_list);
-    _getOffice();
+    _startLocationService();
     _getRecord();
-    // requestLocationPermission();
   }
 
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    super.dispose();
+  void _startLocationService() async {
+    LocationService().initialize();
   }
+
+  // @override
+  // void dispose() {
+  //   // TODO: implement dispose
+  //   super.dispose();
+  // }
 
   /// Request location permission at runtime.
   // void requestLocationPermission() async {
@@ -114,33 +117,33 @@ class _CheckinScreenState extends State<CheckinScreen> {
     return Geolocator.getCurrentPosition();
   }
 
-  Future<void> _showMyDialog() async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false, // user must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Alert Mock App'),
-          content: const SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text('Please turn off the mock app'),
-                // Text('Would you like to approve of this message?'),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Ok'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // Future<void> _showMyDialog() async {
+  //   return showDialog<void>(
+  //     context: context,
+  //     barrierDismissible: false, // user must tap button!
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: const Text('Alert Mock App'),
+  //         content: const SingleChildScrollView(
+  //           child: ListBody(
+  //             children: <Widget>[
+  //               Text('Please turn off the mock app'),
+  //               // Text('Would you like to approve of this message?'),
+  //             ],
+  //           ),
+  //         ),
+  //         actions: <Widget>[
+  //           TextButton(
+  //             child: const Text('Ok'),
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //             },
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   Future addRecordDetails(
       String locationCheckin, location_index, time_in, timestamp_in) async {
@@ -156,13 +159,14 @@ class _CheckinScreenState extends State<CheckinScreen> {
       'longitude': Users.long.toString(),
       'latitude': Users.lat.toString(),
       'office': office,
-      'customer': _customerController.text.trim()
+      'customer': customer
     });
   }
 
   Future updateRecordDetails(
       String locationCheckout, location_index, time_out, timestamp_out) async {
     await http.post(Uri.parse(API.updateCheck), body: {
+      'user_code': Users.id,
       'doc_date': docdate,
       'time': time_out,
       'time_out': timestamp_out,
@@ -203,23 +207,21 @@ class _CheckinScreenState extends State<CheckinScreen> {
     });
   }
 
-  void _getOffice() async {
-    var res = await http.post(Uri.parse(API.getDocCheck), body: {
-      'doc_date': DateFormat('dd MMMM yyyy').format(DateTime.now()),
-      'user_code': Users.id,
-    });
-    if (res.statusCode == 200) {
-      
-      try {
-        var resBody = jsonDecode(res.body);
-        setState(() {
-          office = resBody['office_province'];
-        });
-        // ignore: empty_catches
-      } catch (e) {}
-    }
-   
-  }
+  // void _getOffice() async {
+  //   var res = await http.post(Uri.parse(API.getDocCheck), body: {
+  //     'doc_date': DateFormat('dd MMMM yyyy').format(DateTime.now()),
+  //     'user_code': Users.id,
+  //   });
+  //   if (res.statusCode == 200) {
+  //     try {
+  //       var resBody = jsonDecode(res.body);
+  //       setState(() {
+  //         office = resBody['office_province'];
+  //       });
+  //       // ignore: empty_catches
+  //     } catch (e) {}
+  //   }
+  // }
 
   Future _goToMe(double lat, double long) async {
     final GoogleMapController controller = await _controller.future;
@@ -242,7 +244,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
     screenHeight = MediaQuery.of(context).size.height;
     screenWidth = MediaQuery.of(context).size.width;
     String dropdownValue = officeProvince.first;
-        return _isLoading
+    return _isLoading
         ? Scaffold(
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -404,9 +406,64 @@ class _CheckinScreenState extends State<CheckinScreen> {
                     children: [
                       Expanded(
                         child: Container(
-                            alignment: Alignment.center,
-                            child: textField(
-                                'Customer', 'Customer', _customerController)),
+                          margin: const EdgeInsets.only(bottom: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          alignment: Alignment.centerLeft,
+                          child: DropdownSearch<UserModel>(
+                            dropdownDecoratorProps:
+                                const DropDownDecoratorProps(
+                              dropdownSearchDecoration: InputDecoration(
+                                labelText: "Customer",
+                                filled: true,
+                              ),
+                            ),
+                            onChanged: (UserModel? data) => setState(() {
+                              customer = data!.name.toString();
+                            }),
+                            asyncItems: (filter) => getData(filter),
+                            compareFn: (i, s) => i.isEqual(s),
+                            popupProps:
+                                PopupPropsMultiSelection.modalBottomSheet(
+                              showSearchBox: true,
+                              itemBuilder: _customPopupItemBuilderExample2,
+                              favoriteItemProps: FavoriteItemProps(
+                                showFavoriteItems: true,
+                                favoriteItems: (us) {
+                                  return us
+                                      .where((e) => e.name.contains("O-0019"))
+                                      .toList();
+                                },
+                                favoriteItemBuilder:
+                                    (context, item, isSelected) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 10),
+                                    decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey),
+                                        borderRadius: BorderRadius.circular(10),
+                                        color: Colors.grey[100]),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          item.name,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                              color: Colors.indigo),
+                                        ),
+                                        const Padding(
+                                            padding: EdgeInsets.only(left: 8)),
+                                        isSelected
+                                            ? const Icon(
+                                                Icons.check_box_outlined)
+                                            : const SizedBox.shrink(),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -457,11 +514,11 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                       });
                                     });
                                     _goToMe(Users.lat, Users.long);
-                                    isMockLocation =
-                                        await TrustLocation.isMockLocation;
-                                    print(DateFormat('dd MMMM yyyy').format(
-                                        DateTime.now().subtract(
-                                            const Duration(days: 1))));
+                                    // isMockLocation =
+                                    //     await TrustLocation.isMockLocation;
+                                    // print(DateFormat('dd MMMM yyyy').format(
+                                    //     DateTime.now().subtract(
+                                    //         const Duration(days: 1))));
                                   },
                                   color: Colors.blue,
                                   textColor: Colors.white,
@@ -480,37 +537,29 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                       margin: const EdgeInsets.only(top: 24),
                                       child: MaterialButton(
                                         onPressed: () async {
-                                          if (isMockLocation == true) {
-                                            SystemNavigator.pop();
-                                            FlutterExitApp.exitApp(
-                                                iosForceExit: true);
-                                            FlutterExitApp.exitApp();
-                                          } else {
-                                            _goToMe(Users.lat, Users.long);
-                                            List<Placemark> placemark =
-                                                await placemarkFromCoordinates(
-                                                    Users.lat, Users.long);
-                                            setState(() {
-                                              locationCheckin =
-                                                  "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
-                                              docdate =
-                                                  DateFormat('dd MMMM yyyy')
-                                                      .format(DateTime.now());
-                                            });
+                                          _goToMe(Users.lat, Users.long);
+                                          List<Placemark> placemark =
+                                              await placemarkFromCoordinates(
+                                                  Users.lat, Users.long);
+                                          setState(() {
+                                            locationCheckin =
+                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
+                                            docdate = DateFormat('dd MMMM yyyy')
+                                                .format(DateTime.now());
+                                          });
 
-                                            setState(() {
-                                              checkIn = DateFormat('hh:mm')
-                                                  .format(DateTime.now());
-                                              addRecordDetails(
-                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
-                                                location_index,
-                                                DateFormat('hh:mm a')
-                                                    .format(DateTime.now()),
-                                                DateFormat('yyyy-MM-dd H:m:s')
-                                                    .format(DateTime.now()),
-                                              );
-                                            });
-                                          }
+                                          setState(() {
+                                            checkIn = DateFormat('hh:mm')
+                                                .format(DateTime.now());
+                                            addRecordDetails(
+                                              "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
+                                              location_index,
+                                              DateFormat('hh:mm a')
+                                                  .format(DateTime.now()),
+                                              DateFormat('yyyy-MM-dd H:m:s')
+                                                  .format(DateTime.now()),
+                                            );
+                                          });
                                         },
                                         color: Colors.green,
                                         textColor: Colors.white,
@@ -528,46 +577,38 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                       margin: const EdgeInsets.only(top: 24),
                                       child: MaterialButton(
                                         onPressed: () async {
-                                          if (isMockLocation == true) {
-                                            SystemNavigator.pop();
-                                            FlutterExitApp.exitApp(
-                                                iosForceExit: true);
-                                            FlutterExitApp.exitApp();
-                                          } else {
-                                            _goToMe(Users.lat, Users.long);
-                                            List<Placemark> placemark =
-                                                await placemarkFromCoordinates(
-                                                    Users.lat, Users.long);
+                                          _goToMe(Users.lat, Users.long);
+                                          List<Placemark> placemark =
+                                              await placemarkFromCoordinates(
+                                                  Users.lat, Users.long);
+                                          setState(() {
+                                            locationCheckout =
+                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
+                                            docdate = DateFormat('dd MMMM yyyy')
+                                                .format(DateTime.now());
+                                          });
+                                          updateRecordDetails(
+                                              "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
+                                              location_index,
+                                              DateFormat('hh:mm a')
+                                                  .format(DateTime.now()),
+                                              DateFormat('yyyy-MM-dd H:m:s')
+                                                  .format(DateTime.now()));
+                                          setState(() {
+                                            checkOut = DateFormat('hh:mm')
+                                                .format(DateTime.now());
+                                          });
+                                          Timer(
+                                              const Duration(
+                                                  milliseconds: 5000), () {
                                             setState(() {
-                                              locationCheckout =
-                                                  "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
-                                              docdate =
-                                                  DateFormat('dd MMMM yyyy')
-                                                      .format(DateTime.now());
+                                              location_index++;
+                                              checkOut = '--/--';
+                                              checkIn = '--/--';
+                                              _customerController.clear();
+                                              _locationController.clear();
                                             });
-                                            updateRecordDetails(
-                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
-                                                location_index,
-                                                DateFormat('hh:mm a')
-                                                    .format(DateTime.now()),
-                                                DateFormat('yyyy-MM-dd H:m:s')
-                                                    .format(DateTime.now()));
-                                            setState(() {
-                                              checkOut = DateFormat('hh:mm')
-                                                  .format(DateTime.now());
-                                            });
-                                            Timer(
-                                                const Duration(
-                                                    milliseconds: 5000), () {
-                                              setState(() {
-                                                location_index++;
-                                                checkOut = '--/--';
-                                                checkIn = '--/--';
-                                                _customerController.clear();
-                                                _locationController.clear();
-                                              });
-                                            });
-                                          }
+                                          });
                                         },
                                         color: Colors.red,
                                         textColor: Colors.white,
@@ -657,5 +698,41 @@ class _CheckinScreenState extends State<CheckinScreen> {
         ),
       ],
     );
+  }
+
+  Widget _customPopupItemBuilderExample2(
+      BuildContext context, UserModel item, bool isSelected) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: !isSelected
+          ? null
+          : BoxDecoration(
+              border: Border.all(color: Theme.of(context).primaryColor),
+              borderRadius: BorderRadius.circular(5),
+              color: Colors.white,
+            ),
+      child: ListTile(
+        selected: isSelected,
+        title: Text(item.name),
+      ),
+    );
+  }
+
+  Future<List<UserModel>> getData(filter) async {
+    //  var res = await http.post(Uri.parse(API.getRowCheck), body: {
+    //   'user_code': Users.id,
+    // });
+    var response = await Dio().get(
+      "https://www.project1.ts2337.com/checkin_App/api_sql/user/getCustomer.php",
+      queryParameters: {"filter": filter},
+    );
+
+    final data = jsonDecode(response.data);
+    //  print('date' + response.data);
+    if (data != null) {
+      return UserModel.fromJsonList(data);
+    }
+
+    return [];
   }
 }

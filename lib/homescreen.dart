@@ -1,13 +1,17 @@
-import 'dart:convert';
+// import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
-import 'package:kop_checkin/api/api.dart';
+// import 'package:kop_checkin/agenda.dart';
+import 'package:kop_checkin/agendaJson.dart';
+// import 'package:intl/intl.dart';
+// import 'package:kop_checkin/api/api.dart';
 import 'package:kop_checkin/calendar.dart';
 import 'package:kop_checkin/checkinscreen.dart';
-import 'package:kop_checkin/model/user.dart';
-import 'package:kop_checkin/profile.dart';
-import 'package:http/http.dart' as http;
+// import 'package:kop_checkin/color_picker_demo.dart';
+// import 'package:kop_checkin/dropdown_search.dart';
+// import 'package:kop_checkin/model/user.dart';
+// import 'package:kop_checkin/profile.dart';
+// import 'package:http/http.dart' as http;
 
 
 class HomeScreeen extends StatefulWidget {
@@ -18,12 +22,7 @@ class HomeScreeen extends StatefulWidget {
 }
 
 class _HomeScreeenState extends State<HomeScreeen> {
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    
-  }
+
 
   double screenHeight = 0;
   double screenWidth = 0;
@@ -33,7 +32,8 @@ class _HomeScreeenState extends State<HomeScreeen> {
   List<IconData> navigationIcons = [
     FontAwesomeIcons.calendarDay,
     FontAwesomeIcons.check,
-    FontAwesomeIcons.user,
+    FontAwesomeIcons.calendarXmark,
+    // FontAwesomeIcons.print
   ];
 
   void changePage(int newIndex) {
@@ -51,7 +51,8 @@ class _HomeScreeenState extends State<HomeScreeen> {
         children: const [
           CalendarScreen(),
           CheckinScreen(),
-          ProflieScreen(),
+          CalendarExample(),
+          // ColorPickerDemo(),
         ],
       ),
       bottomNavigationBar: Container(

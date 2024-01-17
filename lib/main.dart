@@ -5,7 +5,7 @@ import 'package:kop_checkin/login.dart';
 import 'package:kop_checkin/model/user.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kop_checkin/services/location_service.dart';
+// import 'package:kop_checkin/services/location_service.dart';
 import 'package:in_app_update/in_app_update.dart';
 
 void main() async {
@@ -43,33 +43,31 @@ class _AuthCheckState extends State<AuthCheck> {
   void initState() {
     super.initState();
     _getCurrentUser();
-    _startLocationService();
-    // checkForUpdate();
+    // _startLocationService();
+    checkForUpdate();
   }
 
-  void _startLocationService() async {
-    LocationService().initialize();
-  }
+  
 
   Future<void> checkForUpdate() async {
-    print('checking for Update');
+    // print('checking for Update');
     InAppUpdate.checkForUpdate().then((info) {
       setState(() {
         if (info.updateAvailability == UpdateAvailability.updateAvailable) {
-          print('update available');
+          // print('update available');
           update();
         }
       });
     }).catchError((e) {
-      print(e.toString());
+      // print(e.toString());
     });
   }
 
   void update() async {
-    print('Updating');
+    // print('Updating');
     await InAppUpdate.startFlexibleUpdate();
     InAppUpdate.completeFlexibleUpdate().then((_) {}).catchError((e) {
-      print(e.toString());
+      // print(e.toString());
     });
   }
 
@@ -79,13 +77,13 @@ class _AuthCheckState extends State<AuthCheck> {
       if (sharedPreferences.getString('employeeUser') != '') {
         setState(() {
           Users.username = sharedPreferences.getString('username')!;
-          Users.name_surname_en =
-              sharedPreferences.getString('name_surname_en')!;
-          Users.name_surname_th =
-              sharedPreferences.getString('name_surname_th')!;
-          Users.pec_group = sharedPreferences.getString('pec_group')!;
-          Users.department = sharedPreferences.getString('department')!;
-          Users.position = sharedPreferences.getString('position')!;
+          // Users.name_surname_en =
+          //     sharedPreferences.getString('name_surname_en')!;
+          // Users.name_surname_th =
+          //     sharedPreferences.getString('name_surname_th')!;
+          // Users.pec_group = sharedPreferences.getString('pec_group')!;
+          // Users.department = sharedPreferences.getString('department')!;
+          // Users.position = sharedPreferences.getString('position')!;
           Users.id = sharedPreferences.getString('employeeID')!;
           userAvailable = true;
         });

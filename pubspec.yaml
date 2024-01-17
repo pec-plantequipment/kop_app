@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.1+1
+version: 1.1.1+22.1.1
 
 environment:
   sdk: '>=3.1.5 <4.0.0'
@@ -30,11 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.2
   flutter_keyboard_visibility: ^5.4.1
   font_awesome_flutter: ^10.6.0
   shared_preferences: ^2.2.2
@@ -43,19 +40,18 @@ dependencies:
   location: ^5.0.3
   provider: ^6.0.5
   image_picker: ^1.0.4
-  firebase_storage: ^11.4.1
   geolocator: ^10.1.0
   url_launcher: ^6.2.1
   google_maps_flutter: ^2.5.0
-  slide_to_act: ^2.0.1
   intl: ^0.18.0
   flutter_launcher_icons: ^0.13.1
-  trust_location: ^2.0.13
-  permission_handler: ^9.2.0
-  location_permissions: ^4.0.1
   dropdown_search: ^5.0.6
-  flutter_exit_app: ^1.1.2
   in_app_update: ^4.2.2
+  syncfusion_flutter_calendar: ^20.3.61
+  dio: ^5.4.0
+  connectivity: ^3.0.3
+  flex_color_picker: ^3.3.0
+  multiselect: ^0.0.7
 
 flutter_icons:
   android: true
@@ -85,8 +81,10 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - assets/images/
     - assets/images/logo.png
     - assets/images/login.png
+    # - assets/images/arrow-up.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
