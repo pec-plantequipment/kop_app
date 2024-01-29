@@ -3,10 +3,12 @@ import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:kop_checkin/homescreen.dart';
 import 'package:kop_checkin/login.dart';
 import 'package:kop_checkin/model/user.dart';
+import 'package:kop_checkin/services/location_service.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:kop_checkin/services/location_service.dart';
 import 'package:in_app_update/in_app_update.dart';
+import 'package:cron/cron.dart';
 
 void main() async {
   runApp(const MyApp());
@@ -43,11 +45,23 @@ class _AuthCheckState extends State<AuthCheck> {
   void initState() {
     super.initState();
     _getCurrentUser();
-    // _startLocationService();
+    _startLocationService();
     checkForUpdate();
   }
 
-  
+  void _startLocationService() async {
+    LocationService().initialize();
+    LocationService().getLatetude().then((value) {
+      setState(() {
+        Users.lat = value!;
+      });
+      LocationService().getLongtetude().then((value) {
+        setState(() {
+          Users.long = value!;
+        });
+      });
+    });
+  }
 
   Future<void> checkForUpdate() async {
     // print('checking for Update');

@@ -20,8 +20,8 @@ class Planner extends StatefulWidget {
 
 class _PlannerState extends State<Planner> {
   final List<Appointment> _appointmentDetails = <Appointment>[];
-  final List<String> freq = <String>['DAILY', 'WEEKLY', 'MONTHLY'];
-  final List<String> interval = <String>['1', '2', '3'];
+  final List<String> freq = <String>['WEEKLY', 'MONTHLY'];
+  final List<String> interval = <String>['1', '2', '3','4'];
   final List<String> count = <String>[
     '1',
     '2',
@@ -46,7 +46,7 @@ class _PlannerState extends State<Planner> {
   late Color dialogSelectColor; // Color for picker using color select dialog.
   late bool isDark;
   String customer = '';
-  String check = '';
+  String check = 'WEEKLY';
 
   final TextEditingController _controller = new TextEditingController();
   String text = ""; // empty string to carry what was there before it
@@ -66,12 +66,14 @@ class _PlannerState extends State<Planner> {
   Color primary = const Color.fromRGBO(12, 45, 92, 1);
   String _date = DateFormat('dd MMMM yyyy').format(DateTime.now());
   String _enddate = DateFormat('MMMM yyyy').format(DateTime.now());
-  String byMonthRe = DateFormat('yyyy-mm-dd').format(DateTime.now());
-  String _day = '';
-  String typeFreq = '';
+  String byuntil = DateFormat('yyyyMM').format(DateTime.now());
+  String _day = DateFormat('dd').format(DateTime.now());
+  String bydate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+  String typeFreq = 'WEEKLY';
   String intervalRe = '1';
   String countRe = '1';
   String byDayRe = 'MO';
+  final CalendarController _calendarController = CalendarController();
 
   var concatenate = StringBuffer();
 
@@ -96,6 +98,12 @@ class _PlannerState extends State<Planner> {
     isDark = false;
   }
 
+  void calendarViewChanged(ViewChangedDetails viewChangedDetails) {
+    SchedulerBinding.instance!.addPostFrameCallback((timeStamp) {
+      _calendarController.selectedDate = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     screenHeight = MediaQuery.of(context).size.height;
@@ -109,7 +117,8 @@ class _PlannerState extends State<Planner> {
       body: SafeArea(
         child: Column(
           children: <Widget>[
-            Expanded(
+            Container(
+              height: 300,
               child: SfCalendar(
                 view: CalendarView.month,
                 dataSource: dataSource,
@@ -171,14 +180,16 @@ class _PlannerState extends State<Planner> {
                           _appointmentDetails[index].subject,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                              fontWeight: FontWeight.w600, color: Colors.white),
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              fontSize: 12),
                         ),
                       ),
                     );
                   },
                   separatorBuilder: (BuildContext context, int index) =>
                       const Divider(
-                    height: 20,
+                    height: 10,
                   ),
                 ),
               ),
@@ -194,11 +205,11 @@ class _PlannerState extends State<Planner> {
                         alignment: Alignment.centerLeft,
                         // margin: const EdgeInsets.only(top: 5),
                         child: Text(
-                          _date,
+                          'Start : ' + _date,
                           style: TextStyle(
                               color: Colors.black54,
                               fontFamily: 'NexaBold',
-                              fontSize: screenWidth / 22),
+                              fontSize: screenWidth / 27),
                         ),
                       ),
                       Container(
@@ -234,93 +245,18 @@ class _PlannerState extends State<Planner> {
                                     child: child!);
                               },
                             );
-
-                            if (month != null) {
-                              setState(() {
-                                _day = DateFormat('dd').format(month);
-                              });
-                            }
                             if (month != null) {
                               setState(() {
                                 _date =
                                     DateFormat('dd MMMM yyyy').format(month);
-                                byMonthRe =
-                                    DateFormat('yyyy-MM-dd').format(month);
+                                bydate = DateFormat('yyyy-MM-dd').format(month);
+                                _day = DateFormat('dd').format(month);
                               });
                             }
-                            print(byMonthRe);
+                            print(_day);
                           },
                           child: Text(
                             'Pick Date',
-                            style: TextStyle(
-                                // backgroundColor: Colors.blue,
-                                color: Colors.black,
-                                fontFamily: 'NexaBold',
-                                fontSize: screenWidth / 22),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Stack(
-                    children: [
-                      Container(
-                        alignment: Alignment.centerLeft,
-                        // margin: const EdgeInsets.only(top: 5),
-                        child: Text(
-                          _enddate,
-                          style: TextStyle(
-                              color: Colors.black54,
-                              fontFamily: 'NexaBold',
-                              fontSize: screenWidth / 22),
-                        ),
-                      ),
-                      Container(
-                        alignment: Alignment.centerRight,
-                        // margin: const EdgeInsets.only(top: 5),
-                        child: GestureDetector(
-                          onTap: () async {
-                            int nowyear = DateTime.now().year.toInt();
-                            final month = await showMonthYearPicker(
-                              context: context,
-                              initialDate: DateTime.now(),
-                              firstDate: DateTime(nowyear),
-                              lastDate: DateTime(2099),
-                              builder: (context, child) {
-                                return Theme(
-                                    data: Theme.of(context).copyWith(
-                                        colorScheme: ColorScheme.light(
-                                            primary: primary,
-                                            secondary: primary,
-                                            onSecondary: Colors.white),
-                                        textButtonTheme: TextButtonThemeData(
-                                          style: TextButton.styleFrom(
-                                              foregroundColor: primary),
-                                        ),
-                                        textTheme: const TextTheme(
-                                          headlineMedium: TextStyle(
-                                              fontFamily: 'NexaRegular'),
-                                          labelSmall: TextStyle(
-                                              fontFamily: 'NexaRegular'),
-                                          labelLarge: TextStyle(
-                                              fontFamily: 'NexaRegular'),
-                                        )),
-                                    child: child!);
-                              },
-                            );
-
-                         
-                            if (month != null) {
-                              setState(() {
-                                _enddate =
-                                    DateFormat('MMMM yyyy').format(month);
-                               
-                              });
-                            }
-                            print(byMonthRe);
-                          },
-                          child: Text(
-                            'Pick Month',
                             style: TextStyle(
                                 // backgroundColor: Colors.blue,
                                 color: Colors.black,
@@ -443,7 +379,7 @@ class _PlannerState extends State<Planner> {
                                 check = value!;
                                 typeFreq = value!;
                               });
-                              print(typeFreq);
+
                               // This is called when the user selects an item.
                             },
                           ),
@@ -452,7 +388,7 @@ class _PlannerState extends State<Planner> {
                       Expanded(
                         child: Container(
                           margin: const EdgeInsets.only(top: 5),
-                          // padding: const EdgeInsets.symmetric(horizontal: 20),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
                           alignment: Alignment.centerLeft,
                           child: DropdownMenu<String>(
                             label: const Text('Interval'),
@@ -509,7 +445,7 @@ class _PlannerState extends State<Planner> {
                           ? Expanded(
                               child: Container(
                                 margin: const EdgeInsets.only(top: 10),
-                                // padding: const EdgeInsets.symmetric(horizontal: 20),
+                                padding: const EdgeInsets.only(right: 27),
                                 alignment: Alignment.centerLeft,
                                 child: DropDownMultiSelect(
                                   options: day,
@@ -522,128 +458,236 @@ class _PlannerState extends State<Planner> {
                                     print(
                                         'you have selected $selectedDay fruits.');
                                   },
-                                  whenEmpty: 'Select your favorite fruits',
+                                  whenEmpty: 'Select your Day (MO = Monday)',
                                 ),
                               ),
                             )
                           : check == "MONTHLY"
                               ? const SizedBox()
                               : const SizedBox(),
-                      Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.only(top: 10),
-                          // padding: const EdgeInsets.symmetric(horizontal: 20),
-                          alignment: Alignment.centerLeft,
-                          child: DropdownMenu<String>(
-                            label: const Text('Count'),
-                            textStyle: const TextStyle(
-                              fontSize: 14,
+                      // Expanded(
+                      //   child: Container(
+                      //     margin: const EdgeInsets.only(top: 10),
+                      //     // padding: const EdgeInsets.symmetric(horizontal: 20),
+                      //     alignment: Alignment.centerLeft,
+                      //     child: DropdownMenu<String>(
+                      //       label: const Text('Count'),
+                      //       textStyle: const TextStyle(
+                      //         fontSize: 14,
+                      //         color: Colors.black54,
+                      //         fontFamily: 'NexaBold',
+                      //       ),
+                      //       initialSelection: dropdownValueCount,
+                      //       dropdownMenuEntries: count
+                      //           .map<DropdownMenuEntry<String>>((String value) {
+                      //         return DropdownMenuEntry<String>(
+                      //             value: value, label: value);
+                      //       }).toList(),
+                      //       onSelected: (String? value) {
+                      //         setState(() {
+                      //           dropdownValueCount = value!;
+                      //           countRe = value!;
+                      //         });
+                      //         // This is called when the user selects an item.
+                      //       },
+                      //     ),
+                      //   ),
+                      // )
+                    ],
+                  ),
+                  Stack(
+                    children: [
+                      Container(
+                        alignment: Alignment.centerLeft,
+                        margin: const EdgeInsets.only(top: 10),
+                        child: Text(
+                          'End : ' + _enddate,
+                          style: TextStyle(
                               color: Colors.black54,
                               fontFamily: 'NexaBold',
-                            ),
-                            initialSelection: dropdownValueCount,
-                            dropdownMenuEntries: count
-                                .map<DropdownMenuEntry<String>>((String value) {
-                              return DropdownMenuEntry<String>(
-                                  value: value, label: value);
-                            }).toList(),
-                            onSelected: (String? value) {
+                              fontSize: screenWidth / 27),
+                        ),
+                      ),
+                      Container(
+                        alignment: Alignment.centerRight,
+                        margin: const EdgeInsets.only(top: 10),
+                        child: GestureDetector(
+                          onTap: () async {
+                            int nowyear = DateTime.now().year.toInt();
+                            final month = await showMonthYearPicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime(nowyear),
+                              lastDate: DateTime(2099),
+                              builder: (context, child) {
+                                return Theme(
+                                    data: Theme.of(context).copyWith(
+                                        colorScheme: ColorScheme.light(
+                                            primary: primary,
+                                            secondary: primary,
+                                            onSecondary: Colors.white),
+                                        textButtonTheme: TextButtonThemeData(
+                                          style: TextButton.styleFrom(
+                                              foregroundColor: primary),
+                                        ),
+                                        textTheme: const TextTheme(
+                                          headlineMedium: TextStyle(
+                                              fontFamily: 'NexaRegular'),
+                                          labelSmall: TextStyle(
+                                              fontFamily: 'NexaRegular'),
+                                          labelLarge: TextStyle(
+                                              fontFamily: 'NexaRegular'),
+                                        )),
+                                    child: child!);
+                              },
+                            );
+
+                            if (month != null) {
                               setState(() {
-                                dropdownValueCount = value!;
-                                countRe = value!;
+                                _enddate =
+                                    DateFormat('MMMM yyyy').format(month);
+                                byuntil = DateFormat('yyyyMM').format(month);
                               });
-                              // This is called when the user selects an item.
-                            },
+                            }
+                          },
+                          child: Text(
+                            'Pick Month',
+                            style: TextStyle(
+                                // backgroundColor: Colors.blue,
+                                color: Colors.black,
+                                fontFamily: 'NexaBold',
+                                fontSize: screenWidth / 22),
                           ),
                         ),
-                      )
+                      ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(bottom: 5, right: 5),
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      textStyle: const TextStyle(fontSize: 20),
-                      backgroundColor: Colors.green,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0),
+            Container(
+              margin: const EdgeInsets.all(20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Material(
+                    color: Colors.white,
+                    child: Center(
+                      child: Ink(
+                        height: 75,
+                        width: 75,
+                        decoration: const ShapeDecoration(
+                          color: Colors.black,
+                          shape: CircleBorder(),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            FontAwesomeIcons.circleLeft,
+                            size: 30,
+                          ),
+                          color: Colors.white,
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                        ),
                       ),
                     ),
-                    onPressed: () {
-                      if (typeFreq == 'WEEKLY') {
-                        // selectedDay.forEach((item) {
-                        //   concatenate.write(','+item);
-                        // });
-                        setState(() {
-                          appointments.add(Appointment(
-                              startTime: DateTime.now()
-                                  .add(const Duration(hours: 4, days: -1)),
-                              endTime: DateTime.now()
-                                  .add(const Duration(hours: 5, days: -1)),
-                              subject: customer,
-                              color: dialogPickerColor,
-                              isAllDay: true,
-                              recurrenceRule:
-                                  'FREQ=WEEKLY;INTERVAL=${intervalRe};BYDAY=${selectedDay.join(",")};COUNT=${countRe}'));
-                        });
-                      } else if (typeFreq == 'MONTHLY') {
-                        setState(() {
-                          appointments.add(Appointment(
-                              startTime: DateTime.now()
-                                  .add(const Duration(hours: 4, days: -1)),
-                              endTime: DateTime.now()
-                                  .add(const Duration(hours: 5, days: -1)),
-                              subject: customer,
-                              color: dialogPickerColor,
-                              isAllDay: true,
-                              recurrenceRule:
-                                  'FREQ=MONTHLY;BYMONTHDAY=${_day};INTERVAL=${intervalRe};COUNT=${countRe}'));
-                        });
-                      } else {
-                        setState(() {
-                          appointments.add(Appointment(
-                              startTime: DateTime.now()
-                                  .add(const Duration(hours: 4, days: -1)),
-                              endTime: DateTime.now()
-                                  .add(const Duration(hours: 5, days: -1)),
-                              subject: customer,
-                              color: dialogPickerColor,
-                              isAllDay: true,
-                              recurrenceRule:
-                                  'FREQ=DAILY;INTERVAL=${intervalRe};COUNT=${countRe}'));
-                        });
-                      }
+                  ),
+                  Material(
+                    color: Colors.white,
+                    child: Center(
+                      child: Ink(
+                        height: 75,
+                        width: 75,
+                        decoration: const ShapeDecoration(
+                          color: Colors.grey,
+                          shape: CircleBorder(),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            FontAwesomeIcons.trashCan,
+                            size: 30,
+                          ),
+                          color: Colors.white,
+                          onPressed: () {
+                            // _appointmentDetails.clear();
+                            setState(() {
+                              // dataSource.appointments?.remove('head');
+                              //  _appointmentDetails.clear();
+                               dataSource.appointments?.clear();
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  Material(
+                    color: Colors.white,
+                    child: Center(
+                      child: Ink(
+                        height: 75,
+                        width: 75,
+                        decoration: const ShapeDecoration(
+                          color: Colors.lightBlue,
+                          shape: CircleBorder(),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            FontAwesomeIcons.penNib,
+                            size: 30,
+                          ),
+                          color: Colors.white,
+                          onPressed: () {
+                            if (typeFreq == 'WEEKLY') {
+                              // selectedDay.forEach((item) {
+                              //   concatenate.write(','+item);
+                              // });
 
-                      dataSource = _DataSource(appointments);
-                    },
-                    icon: const Icon(FontAwesomeIcons.penFancy),
-                    label: const Text('Write'),
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(bottom: 5, right: 5),
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      textStyle: const TextStyle(fontSize: 20),
-                      backgroundColor: Colors.green,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0),
+                              if (selectedDay.isEmpty) {
+                                showSnackBar('Please Select Day');
+                              } else {
+                                setState(() {
+                                  appointments.add(Appointment(
+                                      startTime: DateTime.parse(bydate),
+                                      endTime: DateTime.parse(bydate),
+                                      subject: customer,
+                                      color: dialogPickerColor,
+                                      isAllDay: true,
+                                      recurrenceRule:
+                                          'FREQ=WEEKLY;INTERVAL=$intervalRe;BYDAY=${selectedDay.join(",")};UNTIL=${byuntil}31'));
+                                });
+                              }
+                            } else if (typeFreq == 'MONTHLY') {
+                              setState(() {
+                                appointments.add(Appointment(
+                                    startTime: DateTime.parse(bydate),
+                                    endTime: DateTime.parse(bydate),
+                                    subject: customer,
+                                    color: dialogPickerColor,
+                                    isAllDay: true,
+                                    recurrenceRule:
+                                        'FREQ=MONTHLY;BYMONTHDAY=$_day;INTERVAL=$intervalRe;UNTIL=${byuntil}31'));
+                              });
+                            } else {
+                              setState(() {
+                                appointments.add(Appointment(
+                                    startTime: DateTime.parse(bydate),
+                                    endTime: DateTime.parse(bydate),
+                                    subject: customer,
+                                    color: dialogPickerColor,
+                                    isAllDay: true,
+                                    recurrenceRule:
+                                        'FREQ=DAILY;INTERVAL=$intervalRe;UNTIL=${byuntil}31'));
+                              });
+                            }
+                            dataSource = _DataSource(appointments);
+                          },
+                        ),
                       ),
                     ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(FontAwesomeIcons.backward),
-                    label: const Text('Back'),
                   ),
-                ),
-              ],
+                ],
+              ),
             )
           ],
         ),
@@ -685,13 +729,20 @@ class _PlannerState extends State<Planner> {
   }
 
   _DataSource getCalendarDataSource() {
-    appointments.add(Appointment(
-        startTime: DateTime.now(),
-        endTime: DateTime.now(),
-        isAllDay: true,
-        subject: 'Recurrence',
-        color: Colors.red,
-        recurrenceRule: 'FREQ=DAILY;INTERVAL=3;UNTIL=20240230'));
+    // appointments.add(Appointment(
+    //     startTime: DateTime.now(),
+    //     endTime: DateTime.now(),
+    //     isAllDay: true,
+    //     subject: 'Recurrence',
+    //     color: Colors.red,
+    //     recurrenceRule: 'FREQ=DAILY;INTERVAL=3;UNTIL=20240230'));
+    // appointments.add(Appointment(
+    //     startTime: DateTime.now(),
+    //     endTime: DateTime.now(),
+    //     isAllDay: true,
+    //     subject: 'Recurrence',
+    //     color: Colors.red,
+    //     recurrenceRule: 'FREQ=DAILY;INTERVAL=3;UNTIL=20240230'));
 
     // appointments.add(Appointment(
     //     startTime: DateTime.parse('2024-01-15'),
@@ -699,7 +750,7 @@ class _PlannerState extends State<Planner> {
     //     subject: 'Release Meeting',
     //     color: Colors.red,
     //     isAllDay: true,
-    //     recurrenceRule: 'FREQ=MONTHLY;BYMONTHDAY=3;INTERVAL=1;COUNT=10'));
+    //     recurrenceRule: 'FREQ=MONTHLY;BYMONTHDAY=16;INTERVAL=1;UNTIL=20240230'));
 
     // appointments.add(Appointment(
     //     startTime: DateTime.now().add(const Duration(hours: 4, days: -1)),
@@ -940,6 +991,15 @@ class _PlannerState extends State<Planner> {
         // leading: CircleAvatar(
         //   backgroundImage: NetworkImage(item.avatar),
         // ),
+      ),
+    );
+  }
+
+  void showSnackBar(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(text),
       ),
     );
   }

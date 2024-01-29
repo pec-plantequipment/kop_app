@@ -2,9 +2,11 @@
 import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 // import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:kop_checkin/api/api.dart';
 import 'package:kop_checkin/model/user.dart';
@@ -38,10 +40,11 @@ class _CheckinScreenState extends State<CheckinScreen> {
   String checkOut = '--/--';
   String locationCheckin = " ";
   String locationCheckout = " ";
-  var location_index = 1;
+  // var location_index = 1;
   bool _isLoading = false;
 
   String docdate = DateFormat('dd MMMM yyyy').format(DateTime.now());
+  String nightdate = DateFormat('H').format(DateTime.now());
 
   Color primary = const Color.fromRGBO(12, 45, 92, 1);
   bool check = false;
@@ -50,6 +53,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
   final _locationController = TextEditingController();
   final _customerController = TextEditingController();
   String customer = '';
+  Timer? timer;
 
   final List<Marker> _list = [
     Marker(
@@ -71,19 +75,36 @@ class _CheckinScreenState extends State<CheckinScreen> {
     // TODO: implement initState
     super.initState();
     _maker.addAll(_list);
-    _startLocationService();
+    timer = Timer.periodic(
+        const Duration(seconds: 10), (Timer t) => checkForNewSharedLists());
     _getRecord();
   }
 
-  void _startLocationService() async {
-    LocationService().initialize();
+  // void resetLoctiontime() {
+  //   print('N:'+nightdate);
+  // }
+  void checkForNewSharedLists() {
+    // print(nightdate);
+    if (nightdate == '21' ||
+        nightdate == '22' ||
+        nightdate == '23' ||
+        nightdate == '00' ||
+        nightdate == '01' ||
+        nightdate == '02' ||
+        nightdate == '03' ||
+        nightdate == '04' ||
+        nightdate == '05') {
+      setState(() {
+        Users.location_index = 1;
+      });
+    }
   }
 
-  // @override
-  // void dispose() {
-  //   // TODO: implement dispose
-  //   super.dispose();
-  // }
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
 
   /// Request location permission at runtime.
   // void requestLocationPermission() async {
@@ -188,12 +209,12 @@ class _CheckinScreenState extends State<CheckinScreen> {
         setState(() {
           checkIn = resBody['checkin'];
           checkOut = resBody['checkout'];
-          location_index = int.parse(resBody['location_index']);
+          Users.location_index = int.parse(resBody['location_index']);
           _isLoading = true;
         });
         if (resBody['checkout'] != '--/--') {
           setState(() {
-            location_index = int.parse(resBody['location_index']) + 1;
+            Users.location_index = int.parse(resBody['location_index']) + 1;
             checkIn = '--/--';
             checkOut = '--/--';
             _isLoading = true;
@@ -201,10 +222,45 @@ class _CheckinScreenState extends State<CheckinScreen> {
         }
         // ignore: empty_catches
       } catch (e) {}
+    } else {
+      setState(() {
+        Users.location_index = 1;
+      });
     }
     setState(() {
       _isLoading = true;
     });
+  }
+
+  void changeLocationIndex() async {
+    var res = await http.post(Uri.parse(API.getDocCheck), body: {
+      'doc_date': DateFormat('dd MMMM yyyy').format(DateTime.now()),
+      'user_code': Users.id,
+    });
+    if (res.statusCode == 200) {
+      try {
+        var resBody = jsonDecode(res.body);
+        setState(() {
+          checkIn = resBody['checkin'];
+          checkOut = resBody['checkout'];
+          Users.location_index = int.parse(resBody['location_index']);
+          _isLoading = true;
+        });
+        if (resBody['checkout'] != '--/--') {
+          setState(() {
+            Users.location_index = int.parse(resBody['location_index']) + 1;
+            checkIn = '--/--';
+            checkOut = '--/--';
+            _isLoading = true;
+          });
+        }
+        // ignore: empty_catches
+      } catch (e) {}
+    } else {
+      setState(() {
+        Users.location_index = 1;
+      });
+    }
   }
 
   // void _getOffice() async {
@@ -244,6 +300,8 @@ class _CheckinScreenState extends State<CheckinScreen> {
     screenHeight = MediaQuery.of(context).size.height;
     screenWidth = MediaQuery.of(context).size.width;
     String dropdownValue = officeProvince.first;
+    bool isDebugMode = kDebugMode;
+
     return _isLoading
         ? Scaffold(
             body: SingleChildScrollView(
@@ -257,7 +315,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
                           alignment: Alignment.centerLeft,
                           margin: const EdgeInsets.only(top: 30),
                           child: Text(
-                            'Location $location_index',
+                            'Location ${Users.location_index}',
                             style: TextStyle(
                                 color: Colors.black54,
                                 fontFamily: 'NexaBold',
@@ -445,7 +503,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                     child: Row(
                                       children: [
                                         Text(
-                                          item.name,
+                                          '${item.name}',
                                           textAlign: TextAlign.center,
                                           style: const TextStyle(
                                               color: Colors.indigo),
@@ -500,124 +558,179 @@ class _CheckinScreenState extends State<CheckinScreen> {
                   checkOut == '--/--'
                       ? Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            Expanded(
-                              child: Container(
-                                margin: const EdgeInsets.only(top: 40),
-                                child: MaterialButton(
-                                  onPressed: () async {
-                                    _getCurrentLocation().then((value) {
-                                      setState(() {
-                                        Users.lat = value.latitude;
-                                        Users.long = value.longitude;
-                                      });
+                            Container(
+                              width: 75,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade300,
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: Colors.grey.shade600,
+                                      blurRadius: 5,
+                                      spreadRadius: 1,
+                                      offset: Offset(4, 4)),
+                                  const BoxShadow(
+                                      color: Colors.white,
+                                      blurRadius: 5,
+                                      spreadRadius: 1,
+                                      offset: Offset(-4, -4))
+                                ],
+                                borderRadius: const BorderRadius.all(
+                                    Radius.circular(100)),
+                              ),
+                              margin: const EdgeInsets.only(top: 40),
+                              child: MaterialButton(
+                                onPressed: () async {
+                                  _getCurrentLocation().then((value) {
+                                    setState(() {
+                                      Users.lat = value.latitude;
+                                      Users.long = value.longitude;
                                     });
-                                    _goToMe(Users.lat, Users.long);
-                                    // isMockLocation =
-                                    //     await TrustLocation.isMockLocation;
-                                    // print(DateFormat('dd MMMM yyyy').format(
-                                    //     DateTime.now().subtract(
-                                    //         const Duration(days: 1))));
-                                  },
-                                  color: Colors.blue,
-                                  textColor: Colors.white,
-                                  padding: const EdgeInsets.all(16),
-                                  shape: const CircleBorder(),
-                                  child: const Icon(
-                                    Icons.location_on_outlined,
-                                    size: 40,
-                                  ),
+                                  });
+                                  _goToMe(Users.lat, Users.long);
+
+                                  // isMockLocation =
+                                  //     await TrustLocation.isMockLocation;
+                                  // print(DateFormat('dd MMMM yyyy').format(
+                                  //     DateTime.now().subtract(
+                                  //         const Duration(days: 1))));
+                                },
+                                color: Colors.blue,
+                                textColor: Colors.white,
+                                padding: const EdgeInsets.all(16),
+                                shape: const CircleBorder(),
+                                child: const Icon(
+                                  FontAwesomeIcons.mapLocationDot,
+                                  size: 40,
                                 ),
                               ),
                             ),
                             checkIn == '--/--'
-                                ? Expanded(
-                                    child: Container(
-                                      margin: const EdgeInsets.only(top: 24),
-                                      child: MaterialButton(
-                                        onPressed: () async {
-                                          _goToMe(Users.lat, Users.long);
-                                          List<Placemark> placemark =
-                                              await placemarkFromCoordinates(
-                                                  Users.lat, Users.long);
-                                          setState(() {
-                                            locationCheckin =
-                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
-                                            docdate = DateFormat('dd MMMM yyyy')
-                                                .format(DateTime.now());
-                                          });
+                                ? Container(
+                                    width: 75,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade300,
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: Colors.grey.shade600,
+                                            blurRadius: 5,
+                                            spreadRadius: 1,
+                                            offset: Offset(4, 4)),
+                                        const BoxShadow(
+                                            color: Colors.white,
+                                            blurRadius: 5,
+                                            spreadRadius: 1,
+                                            offset: Offset(-4, -4))
+                                      ],
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(100)),
+                                    ),
+                                    margin: const EdgeInsets.only(top: 24),
+                                    child: MaterialButton(
+                                      onPressed: () async {
+                                        _goToMe(Users.lat, Users.long);
+                                        List<Placemark> placemark =
+                                            await placemarkFromCoordinates(
+                                                Users.lat, Users.long);
+                                        setState(() {
+                                          locationCheckin =
+                                              "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
+                                          docdate = DateFormat('dd MMMM yyyy')
+                                              .format(DateTime.now());
+                                        });
 
-                                          setState(() {
-                                            checkIn = DateFormat('hh:mm')
-                                                .format(DateTime.now());
-                                            addRecordDetails(
-                                              "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
-                                              location_index,
-                                              DateFormat('hh:mm a')
-                                                  .format(DateTime.now()),
-                                              DateFormat('yyyy-MM-dd H:m:s')
-                                                  .format(DateTime.now()),
-                                            );
-                                          });
-                                        },
-                                        color: Colors.green,
-                                        textColor: Colors.white,
-                                        padding: const EdgeInsets.all(16),
-                                        shape: const CircleBorder(),
-                                        child: const Icon(
-                                          Icons.check_circle_outlined,
-                                          size: 40,
-                                        ),
+                                        setState(() {
+                                          checkIn = DateFormat('hh:mm')
+                                              .format(DateTime.now());
+                                          addRecordDetails(
+                                            "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
+                                            Users.location_index,
+                                            DateFormat('hh:mm a')
+                                                .format(DateTime.now()),
+                                            DateFormat('yyyy-MM-dd H:m:s')
+                                                .format(DateTime.now()),
+                                          );
+                                        });
+                                      },
+                                      color: Colors.green,
+                                      textColor: Colors.white,
+                                      padding: const EdgeInsets.all(16),
+                                      shape: const CircleBorder(),
+                                      child: const Icon(
+                                        FontAwesomeIcons.arrowRightToBracket,
+                                        size: 40,
                                       ),
                                     ),
                                   )
-                                : Expanded(
-                                    child: Container(
-                                      margin: const EdgeInsets.only(top: 24),
-                                      child: MaterialButton(
-                                        onPressed: () async {
-                                          _goToMe(Users.lat, Users.long);
-                                          List<Placemark> placemark =
-                                              await placemarkFromCoordinates(
-                                                  Users.lat, Users.long);
+                                : Container(
+                                    width: 75,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade300,
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: Colors.grey.shade600,
+                                            blurRadius: 5,
+                                            spreadRadius: 1,
+                                            offset: Offset(4, 4)),
+                                        const BoxShadow(
+                                            color: Colors.white,
+                                            blurRadius: 5,
+                                            spreadRadius: 1,
+                                            offset: Offset(-4, -4))
+                                      ],
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(150)),
+                                    ),
+                                    margin: const EdgeInsets.only(top: 24),
+                                    child: MaterialButton(
+                                      onPressed: () async {
+                                        _getCurrentLocation().then((value) {
                                           setState(() {
-                                            locationCheckout =
-                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
-                                            docdate = DateFormat('dd MMMM yyyy')
-                                                .format(DateTime.now());
+                                            Users.lat = value.latitude;
+                                            Users.long = value.longitude;
                                           });
-                                          updateRecordDetails(
-                                              "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
-                                              location_index,
-                                              DateFormat('hh:mm a')
-                                                  .format(DateTime.now()),
-                                              DateFormat('yyyy-MM-dd H:m:s')
-                                                  .format(DateTime.now()));
+                                        });
+                                        _goToMe(Users.lat, Users.long);
+                                        List<Placemark> placemark =
+                                            await placemarkFromCoordinates(
+                                                Users.lat, Users.long);
+                                        setState(() {
+                                          locationCheckout =
+                                              "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
+                                          docdate = DateFormat('dd MMMM yyyy')
+                                              .format(DateTime.now());
+                                        });
+                                        updateRecordDetails(
+                                            "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
+                                            Users.location_index,
+                                            DateFormat('hh:mm a')
+                                                .format(DateTime.now()),
+                                            DateFormat('yyyy-MM-dd H:m:s')
+                                                .format(DateTime.now()));
+                                        setState(() {
+                                          checkOut = DateFormat('hh:mm')
+                                              .format(DateTime.now());
+                                        });
+                                        Timer(
+                                            const Duration(milliseconds: 5000),
+                                            () {
                                           setState(() {
-                                            checkOut = DateFormat('hh:mm')
-                                                .format(DateTime.now());
+                                            Users.location_index++;
+                                            checkOut = '--/--';
+                                            checkIn = '--/--';
+                                            _customerController.clear();
+                                            _locationController.clear();
                                           });
-                                          Timer(
-                                              const Duration(
-                                                  milliseconds: 5000), () {
-                                            setState(() {
-                                              location_index++;
-                                              checkOut = '--/--';
-                                              checkIn = '--/--';
-                                              _customerController.clear();
-                                              _locationController.clear();
-                                            });
-                                          });
-                                        },
-                                        color: Colors.red,
-                                        textColor: Colors.white,
-                                        padding: const EdgeInsets.all(16),
-                                        shape: const CircleBorder(),
-                                        child: const Icon(
-                                          Icons.cancel,
-                                          size: 40,
-                                        ),
+                                        });
+                                      },
+                                      color: Colors.red,
+                                      textColor: Colors.white,
+                                      padding: const EdgeInsets.all(16),
+                                      shape: const CircleBorder(),
+                                      child: const Icon(
+                                        FontAwesomeIcons.arrowRightFromBracket,
+                                        size: 40,
                                       ),
                                     ),
                                   ),
@@ -634,17 +747,17 @@ class _CheckinScreenState extends State<CheckinScreen> {
                             ),
                           ),
                         ),
-                  // Container(
-                  //   margin: const EdgeInsets.only(top: 24),
-                  //   child: Text(
-                  //     'Mock $isMockLocation',
-                  //     style: TextStyle(
-                  //       color: Colors.black54,
-                  //       fontFamily: "NexaBold",
-                  //       fontSize: screenWidth / 18,
-                  //     ),
-                  //   ),
-                  // ),
+                  Container(
+                    margin: const EdgeInsets.only(top: 24),
+                    child: Text(
+                      'App is running in ${isDebugMode ? 'debug' : 'release'} mode.',
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontFamily: "NexaBold",
+                        fontSize: screenWidth / 18,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -713,7 +826,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
             ),
       child: ListTile(
         selected: isSelected,
-        title: Text(item.name),
+        title: Text('${item.name} ${item.nameEN} '),
       ),
     );
   }

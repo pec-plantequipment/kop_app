@@ -29,8 +29,10 @@ class _CalendarExampleState extends State<CalendarExample> {
   late List<Meeting> dataSource;
   String _day = DateFormat('yyyy').format(DateTime.now());
   Future getAgendar() async {
-    var res = await http.post(Uri.parse(API.getAgenda),
-        body: {'user_code': Users.id, 'year': DateFormat('yyyy').format(DateTime.now())});
+    var res = await http.post(Uri.parse(API.getAgenda), body: {
+      'user_code': Users.id,
+      'year': DateFormat('yyyy').format(DateTime.now())
+    });
     try {
       return jsonDecode(res.body);
       // ignore: empty_catches
@@ -162,26 +164,48 @@ class _CalendarExampleState extends State<CalendarExample> {
                         }),
                   ),
                   Container(
-                    alignment: Alignment.centerRight,
-                    margin: const EdgeInsets.only(bottom: 5, right: 5),
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        textStyle: const TextStyle(fontSize: 20),
-                        backgroundColor: Colors.green,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20.0),
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const Planner()));
-                      },
-                      icon: const Icon(FontAwesomeIcons.pencil),
-                      label: const Text('Planner'),
-                    ),
-                  )
+                      alignment: Alignment.centerRight,
+                      margin: const EdgeInsets.all(20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Demo Planer',
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontFamily: "NexaBold",
+                              fontSize: 18,
+                            ),
+                          ),
+                          Material(
+                            color: Colors.white,
+                            child: Center(
+                              child: Ink(
+                                height: 75,
+                                width: 75,
+                                decoration: const ShapeDecoration(
+                                  color: Colors.lightBlue,
+                                  shape: CircleBorder(),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    FontAwesomeIcons.fileSignature,
+                                    size: 30,
+                                  ),
+                                  color: Colors.white,
+                                  onPressed: () {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                const Planner()));
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )),
                 ],
               ),
             );
@@ -199,7 +223,10 @@ class _CalendarExampleState extends State<CalendarExample> {
     var data = await http.post(
         Uri.parse(
             "https://www.project1.ts2337.com/checkin_App/api_sql/user/getAgenda.php"),
-        body: {'user_code': Users.id, 'year': DateFormat('yyyy').format(DateTime.now())});
+        body: {
+          'user_code': Users.id,
+          'year': DateFormat('yyyy').format(DateTime.now())
+        });
     var jsonData = json.decode(data.body);
 
     final List<Meeting> appointmentData = [];

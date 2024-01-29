@@ -607,7 +607,7 @@ class _TestDropdownState extends State<TestDropdown> {
   Widget _customDropDownExampleMultiSelection(
       BuildContext context, List<UserModel> selectedItems) {
     if (selectedItems.isEmpty) {
-      return ListTile(
+      return const ListTile(
         contentPadding: EdgeInsets.all(0),
         leading: CircleAvatar(),
         title: Text("No item selected"),
