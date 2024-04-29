@@ -132,9 +132,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 //     resBody['name_surname_en'];
                                 // Users.name_surname_th =
                                 //     resBody['name_surname_th'];
-                                // Users.pec_group = resBody['pec_group'];
-                                // Users.department = resBody['department'];
-                                // Users.position = resBody['position'];
+                                Users.pec_group = resBody['pec_group'];
+                                Users.department = resBody['department'];
+                                Users.position = resBody['position'];
                               });
 
                               sharedPreferences =
@@ -145,12 +145,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               //     resBody['name_surname_en']);
                               // sharedPreferences.setString('name_surname_th',
                               //     resBody['name_surname_th']);
-                              // sharedPreferences.setString(
-                              //     'pec_group', resBody['pec_group']);
-                              // sharedPreferences.setString(
-                              //     'department', resBody['department']);
-                              // sharedPreferences.setString(
-                              //     'position', resBody['position']);
+                              sharedPreferences.setString(
+                                  'pec_group', resBody['pec_group']);
+                              sharedPreferences.setString(
+                                  'department', resBody['department']);
+                              sharedPreferences.setString(
+                                  'position', resBody['position']);
                               sharedPreferences.setString(
                                   'employeeID', resBody['user_id']);
                               sharedPreferences

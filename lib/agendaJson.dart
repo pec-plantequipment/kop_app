@@ -2,12 +2,17 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:kop_checkin/addcustomer.dart';
 import 'package:kop_checkin/api/api.dart';
+import 'package:kop_checkin/login.dart';
 import 'package:kop_checkin/model/user.dart';
 import 'package:kop_checkin/planner.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:connectivity/connectivity.dart';
 
@@ -21,11 +26,10 @@ class CalendarExample extends StatefulWidget {
 class _CalendarExampleState extends State<CalendarExample> {
   final List<Color> _colorCollection = <Color>[];
   String? _networkStatusMsg;
-  final Connectivity _internetConnectivity = new Connectivity();
-  final List<Appointment> _appointmentDetails = <Appointment>[];
+  final Connectivity _internetConnectivity = Connectivity();
   double screenHeight = 0;
   double screenWidth = 0;
-  Color primary = Color.fromRGBO(12, 45, 92, 1);
+  Color primary = const Color.fromRGBO(12, 45, 92, 1);
   late List<Meeting> dataSource;
   String _day = DateFormat('yyyy').format(DateTime.now());
   Future getAgendar() async {
@@ -49,39 +53,13 @@ class _CalendarExampleState extends State<CalendarExample> {
 
   void selectionChanged(CalendarSelectionDetails calendarSelectionDetails) {
     getSelectedDateAppointments(calendarSelectionDetails.date);
-    print(calendarSelectionDetails.date);
   }
 
   void getSelectedDateAppointments(DateTime? selectedDate) {
-    // setState(() {
-    //
-    // });
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
       setState(() {
         _day = DateFormat('dd MMMM yyyy').format(selectedDate!);
       });
-      print('Date: ' + _day);
-
-      // if (dataSource.isEmpty) {
-      //   return;
-      // }
-
-      // for (int i = 0; i < dataSource.length; i++) {
-      //   Appointment appointment = dataSource[i] as Appointment;
-
-      //   /// It return the occurrence appointment for the given pattern appointment at the selected date.
-      //   final Appointment? occurrenceAppointment =
-      //       dataSource.getOccurrenceAppointment(appointment, selectedDate!, '');
-      //   if ((DateTime(appointment.startTime.year, appointment.startTime.month,
-      //               appointment.startTime._day) ==
-      //           DateTime(
-      //               selectedDate.year, selectedDate.month, selectedDate._day)) ||
-      //       occurrenceAppointment != null) {
-      //     setState(() {
-      //       _appointmentDetails.add(appointment);
-      //     });
-      //   }
-      // }
     });
   }
 
@@ -139,23 +117,20 @@ class _CalendarExampleState extends State<CalendarExample> {
                                                   ),
                                                 ],
                                               ),
-                                              title: Container(
-                                                child: Text(
-                                                  list[index]['customer'],
-                                                  textAlign: TextAlign.center,
-                                                  style: const TextStyle(
-                                                      fontSize: 15,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: Colors.white),
-                                                ),
+                                              title: Text(
+                                                list[index]['customer'],
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.white),
                                               ),
                                             ),
                                           ),
                                         ],
                                       );
                                     } else {
-                                      return SizedBox();
+                                      return const SizedBox();
                                     }
                                   })
                               : const Center(
@@ -169,12 +144,31 @@ class _CalendarExampleState extends State<CalendarExample> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Demo Planer',
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontFamily: "NexaBold",
-                              fontSize: 18,
+                          Material(
+                            color: Colors.white,
+                            child: Center(
+                              child: Ink(
+                                height: 75,
+                                width: 75,
+                                decoration: const ShapeDecoration(
+                                  color: Colors.green,
+                                  shape: CircleBorder(),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    FontAwesomeIcons.personCirclePlus,
+                                    size: 30,
+                                  ),
+                                  color: Colors.white,
+                                  onPressed: () {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                const AddCustomer()));
+                                  },
+                                ),
+                              ),
                             ),
                           ),
                           Material(
@@ -202,6 +196,30 @@ class _CalendarExampleState extends State<CalendarExample> {
                                   },
                                 ),
                               ),
+                            ),
+                          ),
+                          MaterialButton(
+                            onPressed: () async {
+                              SharedPreferences preferences =
+                                  await SharedPreferences.getInstance();
+                              await preferences.clear();
+                              // ignore: use_build_context_synchronously
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const KeyboardVisibilityProvider(
+                                          child: LoginScreen(),
+                                        )),
+                              );
+                            },
+                            color: Colors.red,
+                            textColor: Colors.white,
+                            padding: const EdgeInsets.all(16),
+                            shape: const CircleBorder(),
+                            child: const Icon(
+                              Icons.logout,
+                              size: 40,
                             ),
                           ),
                         ],
@@ -246,6 +264,7 @@ class _CalendarExampleState extends State<CalendarExample> {
           dataSource = appointmentData;
         });
       }
+      // ignore: empty_catches
     } catch (e) {}
 
     return appointmentData;
@@ -320,10 +339,12 @@ class MeetingDataSource extends CalendarDataSource {
 }
 
 class Meeting {
+  // ignore: non_constant_identifier_names
   Meeting({this.eventName, this.from, this.to, this.all_day = true});
 
   String? eventName;
   DateTime? from;
   DateTime? to;
+  // ignore: non_constant_identifier_names
   bool? all_day;
 }

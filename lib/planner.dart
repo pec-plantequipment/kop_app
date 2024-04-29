@@ -4,7 +4,8 @@ import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:kop_checkin/model/agenda.dart';
+import 'package:kop_checkin/model/user_model.dart';
+// import 'package:kop_checkin/model/agenda.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:intl/intl.dart';
@@ -973,7 +974,7 @@ class _PlannerState extends State<Planner> {
     );
   }
 
-  Widget _customPopupItemBuilderExample2(
+ Widget _customPopupItemBuilderExample2(
       BuildContext context, UserModel item, bool isSelected) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -986,11 +987,7 @@ class _PlannerState extends State<Planner> {
             ),
       child: ListTile(
         selected: isSelected,
-        title: Text(item.name),
-        // subtitle: Text(item.createdAt.toString()),
-        // leading: CircleAvatar(
-        //   backgroundImage: NetworkImage(item.avatar),
-        // ),
+        title: Text('${item.name} ${item.nameEN}'),
       ),
     );
   }

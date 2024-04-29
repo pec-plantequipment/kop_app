@@ -95,9 +95,9 @@ class _AuthCheckState extends State<AuthCheck> {
           //     sharedPreferences.getString('name_surname_en')!;
           // Users.name_surname_th =
           //     sharedPreferences.getString('name_surname_th')!;
-          // Users.pec_group = sharedPreferences.getString('pec_group')!;
-          // Users.department = sharedPreferences.getString('department')!;
-          // Users.position = sharedPreferences.getString('position')!;
+          Users.pec_group = sharedPreferences.getString('pec_group')!;
+          Users.department = sharedPreferences.getString('department')!;
+          Users.position = sharedPreferences.getString('position')!;
           Users.id = sharedPreferences.getString('employeeID')!;
           userAvailable = true;
         });
