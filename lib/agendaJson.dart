@@ -118,7 +118,11 @@ class _CalendarExampleState extends State<CalendarExample> {
                                                 ],
                                               ),
                                               title: Text(
-                                                list[index]['customer'],
+                                                list[index]['customer']
+                                                            ?.isNotEmpty ==
+                                                        true
+                                                    ? list[index]['customer']
+                                                    : list[index]['remark'],
                                                 textAlign: TextAlign.center,
                                                 style: const TextStyle(
                                                     fontSize: 15,
@@ -127,6 +131,7 @@ class _CalendarExampleState extends State<CalendarExample> {
                                               ),
                                             ),
                                           ),
+                                         
                                         ],
                                       );
                                     } else {

@@ -25,7 +25,7 @@ class _AddCustomerState extends State<AddCustomer> {
   @override
   double screenHeight = 0;
   double screenWidth = 0;
-  
+
   UserModel? _selectedCustomer;
   List<UserModel> userList = [];
 
@@ -273,9 +273,11 @@ class _AddCustomerState extends State<AddCustomer> {
                   if (code.isEmpty ||
                       customer_th.isEmpty ||
                       customer_en.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text(
-                            "Customer Name TH/EN and code are not must be empty!")));
+                    _showMyDialog("Missing Value",
+                        "Customer Name TH/EN and code are not must be empty!");
+                    // ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    //     content: Text(
+                    //         "Customer Name TH/EN and code are not must be empty!")));
                   } else {
                     addCustomer();
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -360,6 +362,34 @@ class _AddCustomerState extends State<AddCustomer> {
         behavior: SnackBarBehavior.floating,
         content: Text(text),
       ),
+    );
+  }
+
+  Future<void> _showMyDialog(String title, String text) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(text),
+                
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 

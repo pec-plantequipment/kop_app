@@ -146,6 +146,33 @@ class _CheckinScreenState extends State<CheckinScreen> {
   //   );
   // }
 
+  Future<void> _showMyDialog(String title, String text) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(text),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future addRecordDetails(
       String locationCheckin, location_index, time_in, timestamp_in) async {
     var res = await http.post(Uri.parse(API.getDocCheck), body: {
@@ -360,7 +387,6 @@ class _CheckinScreenState extends State<CheckinScreen> {
                       Expanded(
                         child: Container(
                           alignment: Alignment.centerLeft,
-                        
                           child: Text(
                             'Location ${Users.location_index}',
                             style: TextStyle(
@@ -536,12 +562,23 @@ class _CheckinScreenState extends State<CheckinScreen> {
                               favoriteItemProps: FavoriteItemProps(
                                 showFavoriteItems: true,
                                 favoriteItems: (us) {
-                                  return us
+                                  var favorites = us
                                       .where((e) =>
-                                          e.name.contains("O-0038") ||
-                                          e.name.contains("O-0039") ||
-                                          e.name.contains("O-0040"))
+                                          e.name.contains("O-0040") ||
+                                          e.name.contains("O-0019") ||
+                                          e.name.contains("O-0039"))
                                       .toList();
+                                  // Sort favorites to ensure '0019' is first
+                                  favorites.sort((a, b) {
+                                    if (a.name.contains("O-0019")) {
+                                      return -1;
+                                    } else if (b.name.contains("O-0019")) {
+                                      return 1;
+                                    } else {
+                                      return 0;
+                                    }
+                                  });
+                                  return favorites;
                                 },
                                 favoriteItemBuilder:
                                     (context, item, isSelected) {
@@ -681,10 +718,11 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                             _locationController.text.trim();
                                         if (Users.customer.isEmpty &&
                                             remark.isEmpty) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(const SnackBar(
-                                                  content: Text(
-                                                      "Customer Or Remark are not must be empty!")));
+                                          // ScaffoldMessenger.of(context)
+                                          //     .showSnackBar(const SnackBar(
+                                          //         content: Text(
+                                          //             "Customer Or Remark are not must be empty!")));
+                                          _showMyDialog('Missing Value','Customer Or Remark are not must be empty!');
                                         } else {
                                           _goToMe(Users.lat, Users.long);
                                           List<Placemark> placemark =
