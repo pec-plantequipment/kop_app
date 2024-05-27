@@ -238,6 +238,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_android_developer_mode:
+    dependency: "direct main"
+    description:
+      name: flutter_android_developer_mode
+      sha256: "8008b9bcf442eb79aff08a2568025440118cd9cc0859df26d108ef44224b37c7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   flutter_keyboard_visibility:
     dependency: "direct main"
     description:
@@ -931,7 +939,7 @@ packages:
     source: hosted
     version: "0.6.0"
   timezone:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: timezone
       sha256: "24c8fcdd49a805d95777a39064862133ff816ebfffe0ceff110fb5960e557964"

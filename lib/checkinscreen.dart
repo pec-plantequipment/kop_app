@@ -16,6 +16,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:kop_checkin/model/user_model.dart';
 import 'package:kop_checkin/services/location_service.dart';
+import 'package:timezone/standalone.dart' as tz;
+import 'package:flutter_android_developer_mode/flutter_android_developer_mode.dart';
 
 class CheckinScreen extends StatefulWidget {
   const CheckinScreen({super.key});
@@ -25,8 +27,6 @@ class CheckinScreen extends StatefulWidget {
 
 class _CheckinScreenState extends State<CheckinScreen> {
   /* Assuming in an async function */
-
-  bool isMockLocation = false;
   String? lat;
   String? long;
   String office = 'Bangkok';
@@ -362,8 +362,6 @@ class _CheckinScreenState extends State<CheckinScreen> {
   Widget build(BuildContext context) {
     screenHeight = MediaQuery.of(context).size.height;
     screenWidth = MediaQuery.of(context).size.width;
-    String dropdownValue = officeProvince.first;
-    bool isDebugMode = kDebugMode;
 
     return _isLoading
         ? Scaffold(
@@ -673,6 +671,17 @@ class _CheckinScreenState extends State<CheckinScreen> {
                               margin: const EdgeInsets.only(top: 40),
                               child: MaterialButton(
                                 onPressed: () async {
+                                  bool isDevMode =
+                                      await FlutterAndroidDeveloperMode
+                                          .isAndroidDeveloperModeEnabled;
+                                  if (isDevMode) {
+                                    _showMyDialog('Developer Mode Warning',
+                                        'Close the Developer Mode in your phone');
+                                    Timer(const Duration(milliseconds: 5000),
+                                        () {
+                                      exit(0);
+                                    });
+                                  }
                                   _getCurrentLocation().then((value) {
                                     setState(() {
                                       Users.lat = value.latitude;
@@ -714,39 +723,56 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                     margin: const EdgeInsets.only(top: 24),
                                     child: MaterialButton(
                                       onPressed: () async {
-                                        String remark =
-                                            _locationController.text.trim();
-                                        if (Users.customer.isEmpty &&
-                                            remark.isEmpty) {
-                                          // ScaffoldMessenger.of(context)
-                                          //     .showSnackBar(const SnackBar(
-                                          //         content: Text(
-                                          //             "Customer Or Remark are not must be empty!")));
-                                          _showMyDialog('Missing Value','Customer Or Remark are not must be empty!');
+                                        bool isDevMode =
+                                            await FlutterAndroidDeveloperMode
+                                                .isAndroidDeveloperModeEnabled;
+                                        if (isDevMode) {
+                                          _showMyDialog(
+                                              'Developer Mode Warning',
+                                              'Close the Developer Mode in your phone');
+                                          Timer(
+                                              const Duration(
+                                                  milliseconds: 5000), () {
+                                            exit(0);
+                                          });
                                         } else {
-                                          _goToMe(Users.lat, Users.long);
-                                          List<Placemark> placemark =
-                                              await placemarkFromCoordinates(
-                                                  Users.lat, Users.long);
-                                          setState(() {
-                                            locationCheckin =
-                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
-                                            docdate = DateFormat('dd MMMM yyyy')
-                                                .format(DateTime.now());
-                                          });
+                                          tz.initializeTimeZone();
+                                          var bangkok =
+                                              tz.getLocation('Asia/Bangkok');
+                                          var now = tz.TZDateTime.now(bangkok);
+                                          String remark =
+                                              _locationController.text.trim();
+                                          if (Users.customer.isEmpty &&
+                                              remark.isEmpty) {
+                                            _showMyDialog('Missing Value',
+                                                'Customer Or Remark are not must be empty!');
+                                          } else {
+                                            _goToMe(Users.lat, Users.long);
+                                            List<Placemark> placemark =
+                                                await placemarkFromCoordinates(
+                                                    Users.lat, Users.long);
+                                            now = tz.TZDateTime.now(bangkok);
+                                            setState(() {
+                                              locationCheckin =
+                                                  "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
+                                              docdate =
+                                                  DateFormat('dd MMMM yyyy')
+                                                      .format(now);
+                                            });
 
-                                          setState(() {
-                                            checkIn = DateFormat('hh:mm')
-                                                .format(DateTime.now());
-                                            addRecordDetails(
-                                              "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
-                                              Users.location_index,
-                                              DateFormat('hh:mm a')
-                                                  .format(DateTime.now()),
-                                              DateFormat('yyyy-MM-dd H:m:s')
-                                                  .format(DateTime.now()),
-                                            );
-                                          });
+                                            setState(() {
+                                              checkIn = DateFormat('hh:mm')
+                                                  .format(now);
+                                              addRecordDetails(
+                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
+                                                Users.location_index,
+                                                DateFormat('hh:mm a')
+                                                    .format(now),
+                                                DateFormat('yyyy-MM-dd H:m:s')
+                                                    .format(now),
+                                              );
+                                            });
+                                          }
                                         }
                                       },
                                       color: Colors.green,
@@ -781,43 +807,62 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                     margin: const EdgeInsets.only(top: 24),
                                     child: MaterialButton(
                                       onPressed: () async {
-                                        _getCurrentLocation().then((value) {
-                                          setState(() {
-                                            Users.lat = value.latitude;
-                                            Users.long = value.longitude;
+                                        bool isDevMode =
+                                            await FlutterAndroidDeveloperMode
+                                                .isAndroidDeveloperModeEnabled;
+                                        if (isDevMode) {
+                                          _showMyDialog(
+                                              'Developer Mode Warning',
+                                              'Close the Developer Mode in your phone');
+                                          Timer(
+                                              const Duration(
+                                                  milliseconds: 5000), () {
+                                            exit(0);
                                           });
-                                        });
-                                        _goToMe(Users.lat, Users.long);
-                                        List<Placemark> placemark =
-                                            await placemarkFromCoordinates(
-                                                Users.lat, Users.long);
-                                        setState(() {
-                                          locationCheckout =
-                                              "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
-                                          docdate = DateFormat('dd MMMM yyyy')
-                                              .format(DateTime.now());
-                                          updateRecordDetails(
-                                              "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
-                                              Users.location_index,
-                                              DateFormat('hh:mm a')
-                                                  .format(DateTime.now()),
-                                              DateFormat('yyyy-MM-dd H:m:s')
-                                                  .format(DateTime.now()));
-                                          checkOut = DateFormat('hh:mm')
-                                              .format(DateTime.now());
-                                        });
-                                        Timer(
-                                            const Duration(milliseconds: 5000),
-                                            () {
-                                          setState(() {
-                                            Users.location_index++;
-                                            checkOut = '--/--';
-                                            checkIn = '--/--';
-                                            Users.customer = '';
-                                            _locationController.clear();
-                                            _selectedUser = null;
+                                        } else {
+                                          tz.initializeTimeZone();
+                                          var bangkok =
+                                              tz.getLocation('Asia/Bangkok');
+                                          var now = tz.TZDateTime.now(bangkok);
+                                          _getCurrentLocation().then((value) {
+                                            setState(() {
+                                              Users.lat = value.latitude;
+                                              Users.long = value.longitude;
+                                            });
                                           });
-                                        });
+                                          now = tz.TZDateTime.now(bangkok);
+                                          _goToMe(Users.lat, Users.long);
+                                          List<Placemark> placemark =
+                                              await placemarkFromCoordinates(
+                                                  Users.lat, Users.long);
+                                          setState(() {
+                                            locationCheckout =
+                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
+                                            docdate = DateFormat('dd MMMM yyyy')
+                                                .format(now);
+                                            updateRecordDetails(
+                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
+                                                Users.location_index,
+                                                DateFormat('hh:mm a')
+                                                    .format(now),
+                                                DateFormat('yyyy-MM-dd H:m:s')
+                                                    .format(now));
+                                            checkOut =
+                                                DateFormat('hh:mm').format(now);
+                                          });
+                                          Timer(
+                                              const Duration(
+                                                  milliseconds: 5000), () {
+                                            setState(() {
+                                              Users.location_index++;
+                                              checkOut = '--/--';
+                                              checkIn = '--/--';
+                                              Users.customer = '';
+                                              _locationController.clear();
+                                              _selectedUser = null;
+                                            });
+                                          });
+                                        }
                                       },
                                       color: Colors.red,
                                       textColor: Colors.white,
