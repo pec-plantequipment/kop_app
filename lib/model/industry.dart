@@ -2,13 +2,12 @@
 
 class UserModel {
   final String id;
-  // final DateTime createdAt;
   final String name;
-  // final String avatar;
+  final String value;
 
   UserModel({
     required this.id,
-    // required this.createdAt,
+    required this.value,
     required this.name,
     // required this.avatar,
   });
@@ -17,8 +16,8 @@ class UserModel {
     return UserModel(
       id: json["id"],
       // createdAt: DateTime.parse(json["createdAt"]),
-      name: json["customer"],
-      // // avatar: json["avatar"],
+      name: json["industry"],
+      value: json["value"],
     );
   }
 
@@ -28,7 +27,7 @@ class UserModel {
 
   ///this method will prevent the override of toString
   String userAsString() {
-    return '#${this.id} ${this.name}';
+    return '#${this.id} ${this.name} ${this.value}';
   }
 
   ///this method will prevent the override of toString
@@ -42,5 +41,7 @@ class UserModel {
   }
 
   @override
-  String toString() => name;
+  String toString() {
+    return '$name';
+  }
 }

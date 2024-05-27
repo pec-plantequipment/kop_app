@@ -80,21 +80,17 @@ class _AgendaCalendarState extends State<AgendaCalendar> {
                             ),
                           ],
                         ),
-                        trailing: Container(
-                          child: Icon(
-                            getIcon(_appointmentDetails[index].subject),
-                            size: 30,
-                            color: Colors.white,
-                          ),
+                        trailing: Icon(
+                          getIcon(_appointmentDetails[index].subject),
+                          size: 30,
+                          color: Colors.white,
                         ),
-                        title: Container(
-                          child: Text(
-                            _appointmentDetails[index].subject,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white),
-                          ),
+                        title: Text(
+                          _appointmentDetails[index].subject,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white),
                         ),
                       ),
                     );

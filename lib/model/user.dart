@@ -7,10 +7,10 @@ class Users {
   static String department = "";
   static String position = "";
   static String profilePiclink = "";
-  static bool conEdit = true;
   static String phone = "";
   static double lat = 13.6566;
   static double long = 100.4682;
   static int location_index = 1;
   static String office = '';
+  static String customer = '';
 }

@@ -1,10 +1,10 @@
 // ignore_for_file: non_constant_identifier_names
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
-// import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geocoding/geocoding.dart';
@@ -14,9 +14,10 @@ import 'package:intl/intl.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter/services.dart';
 import 'package:kop_checkin/model/user_model.dart';
 import 'package:kop_checkin/services/location_service.dart';
+import 'package:timezone/standalone.dart' as tz;
+import 'package:flutter_android_developer_mode/flutter_android_developer_mode.dart';
 
 class CheckinScreen extends StatefulWidget {
   const CheckinScreen({super.key});
@@ -26,8 +27,6 @@ class CheckinScreen extends StatefulWidget {
 
 class _CheckinScreenState extends State<CheckinScreen> {
   /* Assuming in an async function */
-
-  bool isMockLocation = false;
   String? lat;
   String? long;
   String office = 'Bangkok';
@@ -42,6 +41,8 @@ class _CheckinScreenState extends State<CheckinScreen> {
   String locationCheckout = " ";
   // var location_index = 1;
   bool _isLoading = false;
+  List<UserModel> userList = []; // Initialize your user list
+  UserModel? _selectedUser;
 
   String docdate = DateFormat('dd MMMM yyyy').format(DateTime.now());
   String nightdate = DateFormat('H').format(DateTime.now());
@@ -75,29 +76,22 @@ class _CheckinScreenState extends State<CheckinScreen> {
     // TODO: implement initState
     super.initState();
     _maker.addAll(_list);
-    timer = Timer.periodic(
-        const Duration(seconds: 10), (Timer t) => checkForNewSharedLists());
     _getRecord();
+    _startLocationService();
   }
 
-  // void resetLoctiontime() {
-  //   print('N:'+nightdate);
-  // }
-  void checkForNewSharedLists() {
-    // print(nightdate);
-    if (nightdate == '21' ||
-        nightdate == '22' ||
-        nightdate == '23' ||
-        nightdate == '00' ||
-        nightdate == '01' ||
-        nightdate == '02' ||
-        nightdate == '03' ||
-        nightdate == '04' ||
-        nightdate == '05') {
+  void _startLocationService() async {
+    LocationService().initialize();
+    LocationService().getLatetude().then((value) {
       setState(() {
-        Users.location_index = 1;
+        Users.lat = value!;
       });
-    }
+      LocationService().getLongtetude().then((value) {
+        setState(() {
+          Users.long = value!;
+        });
+      });
+    });
   }
 
   @override
@@ -105,20 +99,6 @@ class _CheckinScreenState extends State<CheckinScreen> {
     timer?.cancel();
     super.dispose();
   }
-
-  /// Request location permission at runtime.
-  // void requestLocationPermission() async {
-  //   final permission = await Permission.location.request();
-  //   if (permission == PermissionStatus.granted) {
-  //     TrustLocation.start(0);
-  //     TrustLocation.onChange.listen((values) => setState(() {
-  //           isMockLocation = values.isMockLocation;
-  //         }));
-
-  //   } else if (permission == PermissionStatus.denied) {
-  //     await Permission.location.request();
-  //   }
-  // }
 
   Future<Position> _getCurrentLocation() async {
     bool serviceEnable = await Geolocator.isLocationServiceEnabled();
@@ -166,22 +146,97 @@ class _CheckinScreenState extends State<CheckinScreen> {
   //   );
   // }
 
+  Future<void> _showMyDialog(String title, String text) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(text),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future addRecordDetails(
       String locationCheckin, location_index, time_in, timestamp_in) async {
-    await http.post(Uri.parse(API.addCheckin), body: {
-      'doc_date': docdate,
+    var res = await http.post(Uri.parse(API.getDocCheck), body: {
+      'doc_date': DateFormat('dd MMMM yyyy').format(DateTime.now()),
       'user_code': Users.id,
-      'time': time_in,
-      'checkin_out': 'IN',
-      'location': locationCheckin.toString(),
-      'location_index': location_index.toString(),
-      'time_in': timestamp_in,
-      'remark': _locationController.text.trim(),
-      'longitude': Users.long.toString(),
-      'latitude': Users.lat.toString(),
-      'office': office,
-      'customer': customer
     });
+    if (res.statusCode == 200) {
+      try {
+        var resBody = jsonDecode(res.body);
+        check = resBody['success'];
+        if (check == true) {
+          await http.post(Uri.parse(API.addCheckin), body: {
+            'doc_date': docdate,
+            'user_code': Users.id,
+            'time': time_in,
+            'checkin_out': 'IN',
+            'location': locationCheckin.toString(),
+            'location_index': location_index.toString(),
+            'time_in': timestamp_in,
+            'remark': _locationController.text.trim(),
+            'longitude': Users.long.toString(),
+            'latitude': Users.lat.toString(),
+            'office': "",
+            'customer': Users.customer
+          });
+        } else {
+          setState(() {
+            Users.location_index = 1;
+          });
+          await http.post(Uri.parse(API.addCheckin), body: {
+            'doc_date': docdate,
+            'user_code': Users.id,
+            'time': time_in,
+            'checkin_out': 'IN',
+            'location': locationCheckin.toString(),
+            'location_index': '1',
+            'time_in': timestamp_in,
+            'remark': _locationController.text.trim(),
+            'longitude': Users.long.toString(),
+            'latitude': Users.lat.toString(),
+            'office': "",
+            'customer': Users.customer
+          });
+        }
+      } catch (e) {
+        setState(() {
+          Users.location_index = 1;
+        });
+        await http.post(Uri.parse(API.addCheckin), body: {
+          'doc_date': docdate,
+          'user_code': Users.id,
+          'time': time_in,
+          'checkin_out': 'IN',
+          'location': locationCheckin.toString(),
+          'location_index': '1',
+          'time_in': timestamp_in,
+          'remark': _locationController.text.trim(),
+          'longitude': Users.long.toString(),
+          'latitude': Users.lat.toString(),
+          'office': "",
+          'customer': Users.customer
+        });
+      }
+    }
   }
 
   Future updateRecordDetails(
@@ -295,12 +350,18 @@ class _CheckinScreenState extends State<CheckinScreen> {
     );
   }
 
+  void clearItemBuilder() {
+    PopupPropsMultiSelection.modalBottomSheet(
+      showSearchBox: true,
+      itemBuilder: null,
+      // Other properties
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     screenHeight = MediaQuery.of(context).size.height;
     screenWidth = MediaQuery.of(context).size.width;
-    String dropdownValue = officeProvince.first;
-    bool isDebugMode = kDebugMode;
 
     return _isLoading
         ? Scaffold(
@@ -308,12 +369,22 @@ class _CheckinScreenState extends State<CheckinScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
+                  Container(
+                    alignment: Alignment.centerLeft,
+                    margin: const EdgeInsets.only(top: 30),
+                    child: Text(
+                      'Welcome ${Users.username}',
+                      style: TextStyle(
+                          color: Colors.black54,
+                          fontFamily: 'NexaBold',
+                          fontSize: screenWidth / 20),
+                    ),
+                  ),
                   Row(
                     children: [
                       Expanded(
                         child: Container(
                           alignment: Alignment.centerLeft,
-                          margin: const EdgeInsets.only(top: 30),
                           child: Text(
                             'Location ${Users.location_index}',
                             style: TextStyle(
@@ -325,7 +396,6 @@ class _CheckinScreenState extends State<CheckinScreen> {
                       ),
                       Expanded(
                         child: Container(
-                          margin: const EdgeInsets.only(top: 30),
                           child: RichText(
                             text: TextSpan(
                               text: DateTime.now().day.toString(),
@@ -468,6 +538,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           alignment: Alignment.centerLeft,
                           child: DropdownSearch<UserModel>(
+                            items: userList,
                             dropdownDecoratorProps:
                                 const DropDownDecoratorProps(
                               dropdownSearchDecoration: InputDecoration(
@@ -476,8 +547,10 @@ class _CheckinScreenState extends State<CheckinScreen> {
                               ),
                             ),
                             onChanged: (UserModel? data) => setState(() {
-                              customer = data!.name.toString();
+                              Users.customer = data!.name.toString();
+                              _selectedUser = data;
                             }),
+                            selectedItem: _selectedUser,
                             asyncItems: (filter) => getData(filter),
                             compareFn: (i, s) => i.isEqual(s),
                             popupProps:
@@ -487,9 +560,23 @@ class _CheckinScreenState extends State<CheckinScreen> {
                               favoriteItemProps: FavoriteItemProps(
                                 showFavoriteItems: true,
                                 favoriteItems: (us) {
-                                  return us
-                                      .where((e) => e.name.contains("O-0019"))
+                                  var favorites = us
+                                      .where((e) =>
+                                          e.name.contains("O-0040") ||
+                                          e.name.contains("O-0019") ||
+                                          e.name.contains("O-0039"))
                                       .toList();
+                                  // Sort favorites to ensure '0019' is first
+                                  favorites.sort((a, b) {
+                                    if (a.name.contains("O-0019")) {
+                                      return -1;
+                                    } else if (b.name.contains("O-0019")) {
+                                      return 1;
+                                    } else {
+                                      return 0;
+                                    }
+                                  });
+                                  return favorites;
                                 },
                                 favoriteItemBuilder:
                                     (context, item, isSelected) {
@@ -503,7 +590,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                     child: Row(
                                       children: [
                                         Text(
-                                          '${item.name}',
+                                          item.code + " " + item.nameEN,
                                           textAlign: TextAlign.center,
                                           style: const TextStyle(
                                               color: Colors.indigo),
@@ -525,36 +612,38 @@ class _CheckinScreenState extends State<CheckinScreen> {
                       ),
                     ],
                   ),
-                  Row(
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(top: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        alignment: Alignment.centerLeft,
-                        child: DropdownMenu<String>(
-                          label: const Text('Office'),
-                          textStyle: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.black54,
-                            fontFamily: 'NexaBold',
-                          ),
-                          initialSelection: dropdownValue,
-                          dropdownMenuEntries: officeProvince
-                              .map<DropdownMenuEntry<String>>((String value) {
-                            return DropdownMenuEntry<String>(
-                                value: value, label: value);
-                          }).toList(),
-                          onSelected: (String? value) {
-                            setState(() {
-                              dropdownValue = value!;
-                              office = value!;
-                            });
-                            // This is called when the user selects an item.
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+                  textField("Remark", "Remark", _locationController),
+
+                  // Row(
+                  //   children: [
+                  //     Container(
+                  //       margin: const EdgeInsets.only(top: 10),
+                  //       padding: const EdgeInsets.symmetric(horizontal: 20),
+                  //       alignment: Alignment.centerLeft,
+                  //       child: DropdownMenu<String>(
+                  //         label: const Text('Office'),
+                  //         textStyle: const TextStyle(
+                  //           fontSize: 18,
+                  //           color: Colors.black54,
+                  //           fontFamily: 'NexaBold',
+                  //         ),
+                  //         initialSelection: dropdownValue,
+                  //         dropdownMenuEntries: officeProvince
+                  //             .map<DropdownMenuEntry<String>>((String value) {
+                  //           return DropdownMenuEntry<String>(
+                  //               value: value, label: value);
+                  //         }).toList(),
+                  //         onSelected: (String? value) {
+                  //           setState(() {
+                  //             dropdownValue = value!;
+                  //             office = value!;
+                  //           });
+                  //           // This is called when the user selects an item.
+                  //         },
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
                   checkOut == '--/--'
                       ? Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -569,7 +658,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                       color: Colors.grey.shade600,
                                       blurRadius: 5,
                                       spreadRadius: 1,
-                                      offset: Offset(4, 4)),
+                                      offset: const Offset(4, 4)),
                                   const BoxShadow(
                                       color: Colors.white,
                                       blurRadius: 5,
@@ -582,6 +671,17 @@ class _CheckinScreenState extends State<CheckinScreen> {
                               margin: const EdgeInsets.only(top: 40),
                               child: MaterialButton(
                                 onPressed: () async {
+                                  bool isDevMode =
+                                      await FlutterAndroidDeveloperMode
+                                          .isAndroidDeveloperModeEnabled;
+                                  if (isDevMode) {
+                                    _showMyDialog('Developer Mode Warning',
+                                        'Close the Developer Mode in your phone');
+                                    Timer(const Duration(milliseconds: 5000),
+                                        () {
+                                      exit(0);
+                                    });
+                                  }
                                   _getCurrentLocation().then((value) {
                                     setState(() {
                                       Users.lat = value.latitude;
@@ -589,12 +689,6 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                     });
                                   });
                                   _goToMe(Users.lat, Users.long);
-
-                                  // isMockLocation =
-                                  //     await TrustLocation.isMockLocation;
-                                  // print(DateFormat('dd MMMM yyyy').format(
-                                  //     DateTime.now().subtract(
-                                  //         const Duration(days: 1))));
                                 },
                                 color: Colors.blue,
                                 textColor: Colors.white,
@@ -616,7 +710,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                             color: Colors.grey.shade600,
                                             blurRadius: 5,
                                             spreadRadius: 1,
-                                            offset: Offset(4, 4)),
+                                            offset: const Offset(4, 4)),
                                         const BoxShadow(
                                             color: Colors.white,
                                             blurRadius: 5,
@@ -629,29 +723,57 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                     margin: const EdgeInsets.only(top: 24),
                                     child: MaterialButton(
                                       onPressed: () async {
-                                        _goToMe(Users.lat, Users.long);
-                                        List<Placemark> placemark =
-                                            await placemarkFromCoordinates(
-                                                Users.lat, Users.long);
-                                        setState(() {
-                                          locationCheckin =
-                                              "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
-                                          docdate = DateFormat('dd MMMM yyyy')
-                                              .format(DateTime.now());
-                                        });
+                                        bool isDevMode =
+                                            await FlutterAndroidDeveloperMode
+                                                .isAndroidDeveloperModeEnabled;
+                                        if (isDevMode) {
+                                          _showMyDialog(
+                                              'Developer Mode Warning',
+                                              'Close the Developer Mode in your phone');
+                                          Timer(
+                                              const Duration(
+                                                  milliseconds: 5000), () {
+                                            exit(0);
+                                          });
+                                        } else {
+                                          tz.initializeTimeZone();
+                                          var bangkok =
+                                              tz.getLocation('Asia/Bangkok');
+                                          var now = tz.TZDateTime.now(bangkok);
+                                          String remark =
+                                              _locationController.text.trim();
+                                          if (Users.customer.isEmpty &&
+                                              remark.isEmpty) {
+                                            _showMyDialog('Missing Value',
+                                                'Customer Or Remark are not must be empty!');
+                                          } else {
+                                            _goToMe(Users.lat, Users.long);
+                                            List<Placemark> placemark =
+                                                await placemarkFromCoordinates(
+                                                    Users.lat, Users.long);
+                                            now = tz.TZDateTime.now(bangkok);
+                                            setState(() {
+                                              locationCheckin =
+                                                  "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
+                                              docdate =
+                                                  DateFormat('dd MMMM yyyy')
+                                                      .format(now);
+                                            });
 
-                                        setState(() {
-                                          checkIn = DateFormat('hh:mm')
-                                              .format(DateTime.now());
-                                          addRecordDetails(
-                                            "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
-                                            Users.location_index,
-                                            DateFormat('hh:mm a')
-                                                .format(DateTime.now()),
-                                            DateFormat('yyyy-MM-dd H:m:s')
-                                                .format(DateTime.now()),
-                                          );
-                                        });
+                                            setState(() {
+                                              checkIn = DateFormat('hh:mm')
+                                                  .format(now);
+                                              addRecordDetails(
+                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
+                                                Users.location_index,
+                                                DateFormat('hh:mm a')
+                                                    .format(now),
+                                                DateFormat('yyyy-MM-dd H:m:s')
+                                                    .format(now),
+                                              );
+                                            });
+                                          }
+                                        }
                                       },
                                       color: Colors.green,
                                       textColor: Colors.white,
@@ -672,7 +794,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                             color: Colors.grey.shade600,
                                             blurRadius: 5,
                                             spreadRadius: 1,
-                                            offset: Offset(4, 4)),
+                                            offset: const Offset(4, 4)),
                                         const BoxShadow(
                                             color: Colors.white,
                                             blurRadius: 5,
@@ -685,44 +807,62 @@ class _CheckinScreenState extends State<CheckinScreen> {
                                     margin: const EdgeInsets.only(top: 24),
                                     child: MaterialButton(
                                       onPressed: () async {
-                                        _getCurrentLocation().then((value) {
-                                          setState(() {
-                                            Users.lat = value.latitude;
-                                            Users.long = value.longitude;
+                                        bool isDevMode =
+                                            await FlutterAndroidDeveloperMode
+                                                .isAndroidDeveloperModeEnabled;
+                                        if (isDevMode) {
+                                          _showMyDialog(
+                                              'Developer Mode Warning',
+                                              'Close the Developer Mode in your phone');
+                                          Timer(
+                                              const Duration(
+                                                  milliseconds: 5000), () {
+                                            exit(0);
                                           });
-                                        });
-                                        _goToMe(Users.lat, Users.long);
-                                        List<Placemark> placemark =
-                                            await placemarkFromCoordinates(
-                                                Users.lat, Users.long);
-                                        setState(() {
-                                          locationCheckout =
-                                              "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
-                                          docdate = DateFormat('dd MMMM yyyy')
-                                              .format(DateTime.now());
-                                        });
-                                        updateRecordDetails(
-                                            "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
-                                            Users.location_index,
-                                            DateFormat('hh:mm a')
-                                                .format(DateTime.now()),
-                                            DateFormat('yyyy-MM-dd H:m:s')
-                                                .format(DateTime.now()));
-                                        setState(() {
-                                          checkOut = DateFormat('hh:mm')
-                                              .format(DateTime.now());
-                                        });
-                                        Timer(
-                                            const Duration(milliseconds: 5000),
-                                            () {
-                                          setState(() {
-                                            Users.location_index++;
-                                            checkOut = '--/--';
-                                            checkIn = '--/--';
-                                            _customerController.clear();
-                                            _locationController.clear();
+                                        } else {
+                                          tz.initializeTimeZone();
+                                          var bangkok =
+                                              tz.getLocation('Asia/Bangkok');
+                                          var now = tz.TZDateTime.now(bangkok);
+                                          _getCurrentLocation().then((value) {
+                                            setState(() {
+                                              Users.lat = value.latitude;
+                                              Users.long = value.longitude;
+                                            });
                                           });
-                                        });
+                                          now = tz.TZDateTime.now(bangkok);
+                                          _goToMe(Users.lat, Users.long);
+                                          List<Placemark> placemark =
+                                              await placemarkFromCoordinates(
+                                                  Users.lat, Users.long);
+                                          setState(() {
+                                            locationCheckout =
+                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}";
+                                            docdate = DateFormat('dd MMMM yyyy')
+                                                .format(now);
+                                            updateRecordDetails(
+                                                "${placemark[0].name} ${placemark[0].subLocality} ${placemark[0].thoroughfare} ${placemark[0].subAdministrativeArea}  ${placemark[0].locality} ${placemark[0].administrativeArea} ${placemark[0].postalCode}  ${placemark[0].country}",
+                                                Users.location_index,
+                                                DateFormat('hh:mm a')
+                                                    .format(now),
+                                                DateFormat('yyyy-MM-dd H:m:s')
+                                                    .format(now));
+                                            checkOut =
+                                                DateFormat('hh:mm').format(now);
+                                          });
+                                          Timer(
+                                              const Duration(
+                                                  milliseconds: 5000), () {
+                                            setState(() {
+                                              Users.location_index++;
+                                              checkOut = '--/--';
+                                              checkIn = '--/--';
+                                              Users.customer = '';
+                                              _locationController.clear();
+                                              _selectedUser = null;
+                                            });
+                                          });
+                                        }
                                       },
                                       color: Colors.red,
                                       textColor: Colors.white,
@@ -747,17 +887,6 @@ class _CheckinScreenState extends State<CheckinScreen> {
                             ),
                           ),
                         ),
-                  Container(
-                    margin: const EdgeInsets.only(top: 24),
-                    child: Text(
-                      'App is running in ${isDebugMode ? 'debug' : 'release'} mode.',
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontFamily: "NexaBold",
-                        fontSize: screenWidth / 18,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -827,6 +956,15 @@ class _CheckinScreenState extends State<CheckinScreen> {
       child: ListTile(
         selected: isSelected,
         title: Text('${item.name} ${item.nameEN} '),
+      ),
+    );
+  }
+
+  void showSnackBar(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(text),
       ),
     );
   }

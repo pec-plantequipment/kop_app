@@ -22,10 +22,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Color primary = const Color.fromRGBO(12, 45, 92, 1);
   String _day = DateFormat('dd MMMM yyyy').format(DateTime.now());
   Future getRowCheckin() async {
-    var res = await http.post(Uri.parse(API.getRowCheck), body: {
-      'user_code': Users.id,
-      'doc_date': _day
-    });
+    var res = await http.post(Uri.parse(API.getRowCheck),
+        body: {'user_code': Users.id, 'doc_date': _day});
     try {
       return jsonDecode(res.body);
       // ignore: empty_catches
@@ -145,7 +143,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                               right: 6,
                                               left: 6,
                                               bottom: 12),
-                                          height: screenHeight / 3,
+                                          height: screenHeight / 2.5,
                                           decoration: const BoxDecoration(
                                             color: Colors.white,
                                             boxShadow: [
@@ -279,6 +277,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                 alignment: Alignment.centerLeft,
                                                 child: Text(
                                                     "Customer : ${list[index]['customer']}",
+                                                    style: TextStyle(
+                                                        fontFamily: 'NexaBold',
+                                                        fontSize:
+                                                            screenWidth / 24,
+                                                        color: Colors.black54)),
+                                              ),
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                    "Remark : ${list[index]['remark']}",
                                                     style: TextStyle(
                                                         fontFamily: 'NexaBold',
                                                         fontSize:

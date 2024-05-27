@@ -2,12 +2,13 @@ class UserModel {
   final String id;
   // final DateTime createdAt;
   final String name;
+  final String code;
   final String nameEN;
   // final String avatar;
 
   UserModel({
     required this.id,
-    // required this.createdAt,
+    required this.code,
     required this.name,
     required this.nameEN,
     // required this.avatar,
@@ -16,7 +17,7 @@ class UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
         id: json["id"],
-        // createdAt: DateTime.parse(json["createdAt"]),
+        code: json["customer_code"],
         name: json["customer"],
         nameEN: json["customer_EN"]
         // // avatar: json["avatar"],
@@ -29,7 +30,7 @@ class UserModel {
 
   ///this method will prevent the override of toString
   String userAsString() {
-    return '#${this.id} ${this.name} ${this.nameEN}';
+    return '#${this.id} ${this.code} ${this.name} ${this.nameEN} ';
   }
 
   ///this method will prevent the override of toString
@@ -44,6 +45,6 @@ class UserModel {
   }
 
   @override
-  String toString() => '$name, $nameEN';
+  String toString() => '$name, $nameEN, $code';
  
 }
